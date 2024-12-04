@@ -33,15 +33,15 @@ This extension requires the following:
 
 ## Release Notes
 
+### 1.0.1
+- Added support for:
+  - i18n schema (e.g., `i18n/en.json`, `i18n/fr.json`)
+
 ### 1.0.0
 - Initial release with support for:
   - Content Patcher schema (`content.json`)
   - SMAPI manifest schema (`manifest.json`)
   - IntelliSense for Stardew Valley modding files
-
-### 1.0.1
-- Added support for:
-  - i18n schema (e.g., `i18n/en.json`, `i18n/fr.json`)
 
 ---
 
