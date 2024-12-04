@@ -2,7 +2,7 @@
   "name": "stardew-modding-schema",
   "displayName": "Stardew Modding Schema",
   "description": "Adds schema to content patcher files",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "publisher": "BSavage81",
   "engines": {
     "vscode": "^1.80.0"
@@ -11,6 +11,14 @@
     "Programming Languages"
   ],
   "icon": "assets/icon.png",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/bsavage81/stardew-modding-schema.git"
+  },
+  "bugs": {
+    "url": "https://github.com/bsavage81/stardew-modding-schema/issues"
+  },
+  "homepage": "https://github.com/bsavage81/stardew-modding-schema#readme",
   "activationEvents": [
     "onLanguage:json",
     "onLanguage:jsonc",
@@ -48,6 +56,10 @@
           "manifest.json"
         ],
         "url": "https://smapi.io/schemas/manifest.json"
+      },
+      {
+        "fileMatch": ["i18n/*.json"],
+        "url": "https://smapi.io/schemas/i18n.json"
       }
     ]
   },

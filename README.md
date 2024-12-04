@@ -7,15 +7,13 @@ The "Stardew Modding Schema" extension is a powerful tool designed to streamline
 ## Features
 
 - **Schema Validation**: Automatically validates `content.json` and `manifest.json` files based on official SMAPI and Content Patcher schemas.
+## Features
+
+- **Translation File Support**: Provides schema validation and IntelliSense for all `i18n` translation files used in Stardew Valley mods. - All JSON files in the `i18n` folder (e.g., `i18n/en.json`, `i18n/fr.json`).
+
 - **IntelliSense**: Provides autocompletion, inline documentation, and error highlighting for JSON files.
 - **Live Feedback**: Notifies users of invalid configurations or missing required fields.
 - **File Watcher**: Alerts users to changes in relevant files during development.
-
-### Screenshots
-
-> Tip: Include animated GIFs showing schema validation and IntelliSense for enhanced engagement.
-
----
 
 ## Requirements
 
@@ -23,14 +21,6 @@ This extension requires the following:
 - **VS Code Version**: 1.80.0 or later
 - **Internet Access**: For downloading schema files from the SMAPI website
 - **Node.js**: Installed on your machine to use `vsce` and other development tools if modifying the extension.
-
----
-
-## Extension Settings
-
-The extension currently does not introduce any user-facing settings. Future updates may include:
-- `stardewModdingSchema.enable`: Enable or disable the extension.
-- `stardewModdingSchema.schemaPath`: Override the default schema URL.
 
 ---
 
@@ -48,6 +38,10 @@ The extension currently does not introduce any user-facing settings. Future upda
   - Content Patcher schema (`content.json`)
   - SMAPI manifest schema (`manifest.json`)
   - IntelliSense for Stardew Valley modding files
+
+### 1.0.1
+- Added support for:
+  - i18n schema (e.g., `i18n/en.json`, `i18n/fr.json`)
 
 ---
 
