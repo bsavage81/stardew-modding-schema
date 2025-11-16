@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import * as jsonc from 'jsonc-parser';
 
 let cachedBundleThemes: string[] | null = null;
 let bundleThemesPromise: Promise<string[]> | null = null;
@@ -30,7 +31,10 @@ async function getBundleThemes(): Promise<string[]> {
     bundleThemesPromise = (async () => {
         const themes = new Set<string>();
 
+        // ─────────────────────────────────────
         // 1) content.json (EditData -> UnlockableBundles/BundleThemes)
+        //    Use jsonc so comments/trailing commas don't break us.
+        // ─────────────────────────────────────
         const contentFiles = await vscode.workspace.findFiles('**/content.json');
 
         for (const file of contentFiles) {
@@ -38,8 +42,15 @@ async function getBundleThemes(): Promise<string[]> {
                 const doc = await vscode.workspace.openTextDocument(file);
                 const text = doc.getText();
 
-                const json = JSON.parse(text) as any;
-                const changes = json?.Changes;
+                const errors: jsonc.ParseError[] = [];
+                const json = jsonc.parse(text, errors, { allowTrailingComma: true }) as any;
+
+                // Even if there are minor parse errors, try to use what we got
+                if (!json || typeof json !== 'object') {
+                    continue;
+                }
+
+                const changes = json.Changes;
                 if (!Array.isArray(changes)) {
                     continue;
                 }
@@ -63,25 +74,34 @@ async function getBundleThemes(): Promise<string[]> {
             }
         }
 
+        // ─────────────────────────────────────
         // 2) Any *BundleThemes*.json in the workspace
+        //    Also parsed with jsonc for comments/trailing comma support.
+        // ─────────────────────────────────────
         const bundleThemesFiles = await vscode.workspace.findFiles('**/*BundleThemes*.json');
 
         for (const file of bundleThemesFiles) {
             try {
                 const doc = await vscode.workspace.openTextDocument(file);
                 const text = doc.getText();
-                const json = JSON.parse(text) as any;
 
-                // Either { "Entries": { ... } } or { "ThemeKey": { ... } }
-                if (json && typeof json === 'object') {
-                    if (json.Entries && typeof json.Entries === 'object') {
-                        for (const key of Object.keys(json.Entries)) {
-                            themes.add(key);
-                        }
-                    } else {
-                        for (const key of Object.keys(json)) {
-                            themes.add(key);
-                        }
+                const errors: jsonc.ParseError[] = [];
+                const json = jsonc.parse(text, errors, { allowTrailingComma: true }) as any;
+
+                if (!json || typeof json !== 'object') {
+                    continue;
+                }
+
+                // Two likely shapes:
+                // 1) { "ThemeKey": { ... }, "OtherTheme": { ... } }
+                // 2) { "Entries": { "ThemeKey": { ... }, ... } }
+                if (json.Entries && typeof json.Entries === 'object') {
+                    for (const key of Object.keys(json.Entries)) {
+                        themes.add(key);
+                    }
+                } else {
+                    for (const key of Object.keys(json)) {
+                        themes.add(key);
                     }
                 }
             } catch {
@@ -89,7 +109,10 @@ async function getBundleThemes(): Promise<string[]> {
             }
         }
 
+        // ─────────────────────────────────────
         // 3) ShopTypes.json from the UB mod install (configured path)
+        //    Parsed with jsonc so comments / trailing commas are fine.
+        // ─────────────────────────────────────
         const config = vscode.workspace.getConfiguration('stardewModdingSchema');
         const shopTypesPath = config.get<string>('unlockableBundles.shopTypesPath')?.trim();
 
@@ -98,21 +121,28 @@ async function getBundleThemes(): Promise<string[]> {
                 const uri = vscode.Uri.file(shopTypesPath);
                 const data = await vscode.workspace.fs.readFile(uri);
                 const text = Buffer.from(data).toString('utf8');
-                const json = JSON.parse(text) as any;
 
-                // Assume top-level keys are theme IDs
+                const errors: jsonc.ParseError[] = [];
+                const json = jsonc.parse(text, errors, { allowTrailingComma: true }) as any;
+
                 if (json && typeof json === 'object') {
                     for (const key of Object.keys(json)) {
                         themes.add(key);
                     }
                 }
             } catch {
-                // Ignore bad path; diagnostics will warn
+                // If the path is wrong or file is unreadable, just ignore it here.
+                // The diagnostics logic will handle warning the user.
             }
         }
 
         cachedBundleThemes = Array.from(themes).sort();
         bundleThemesPromise = null;
+
+        console.log(
+            `[Stardew Modding Schema] Loaded ${cachedBundleThemes.length} bundle themes / shop types for completion.`
+        );
+
         return cachedBundleThemes;
     })();
 
@@ -125,7 +155,7 @@ async function getBundleThemes(): Promise<string[]> {
  *  - any JSON under a /data/ folder (data/**.json)
  */
 function isUbRelevantDocument(doc: vscode.TextDocument): boolean {
-    if (doc.languageId !== 'json') {
+    if (doc.languageId !== 'json' && doc.languageId !== 'jsonc') {
         return false;
     }
 
@@ -190,18 +220,15 @@ async function updateUbDiagnostics(doc: vscode.TextDocument): Promise<void> {
 }
 
 export function activate(context: vscode.ExtensionContext): void {
-    console.log('Stardew Valley Modding Extension is now active!');
+    console.log('Stardew Modding Extension is now active!');
 
-    // Diagnostics for UB-related warnings
     ubDiagnostics = vscode.languages.createDiagnosticCollection('stardew-ub');
     context.subscriptions.push(ubDiagnostics);
 
-    // Run diagnostics for already-open documents
     vscode.workspace.textDocuments.forEach((doc: vscode.TextDocument) => {
         void updateUbDiagnostics(doc);
     });
 
-    // Update diagnostics when documents are opened/changed/closed
     context.subscriptions.push(
         vscode.workspace.onDidOpenTextDocument((doc: vscode.TextDocument) => {
             void updateUbDiagnostics(doc);
@@ -220,7 +247,6 @@ export function activate(context: vscode.ExtensionContext): void {
         })
     );
 
-    // React to configuration changes (ShopTypes.json path)
     context.subscriptions.push(
         vscode.workspace.onDidChangeConfiguration((e: vscode.ConfigurationChangeEvent) => {
             if (e.affectsConfiguration('stardewModdingSchema.unlockableBundles.shopTypesPath')) {
@@ -232,7 +258,6 @@ export function activate(context: vscode.ExtensionContext): void {
         })
     );
 
-    // File watchers for content.json + manifest.json
     const stardewFileSelector = ['**/content.json', '**/manifest.json'];
     const fileWatcher = vscode.workspace.createFileSystemWatcher(
         `{${stardewFileSelector.join(',')}}`
@@ -261,7 +286,6 @@ export function activate(context: vscode.ExtensionContext): void {
 
     context.subscriptions.push(fileWatcher);
 
-    // i18n watcher
     const i18nFileWatcher = vscode.workspace.createFileSystemWatcher('**/i18n/*.json');
 
     i18nFileWatcher.onDidChange((uri: vscode.Uri) => {
@@ -278,7 +302,6 @@ export function activate(context: vscode.ExtensionContext): void {
 
     context.subscriptions.push(i18nFileWatcher);
 
-    // BundleThemes watcher
     const bundleThemesFileWatcher =
         vscode.workspace.createFileSystemWatcher('**/*BundleThemes*.json');
 
@@ -293,26 +316,32 @@ export function activate(context: vscode.ExtensionContext): void {
     });
 
     bundleThemesFileWatcher.onDidDelete((uri: vscode.Uri) => {
-        vscode.window.showInformationMessage(`BundleThemes file deleted: ${uri.fsPath}`);
+        vscode.window.showInformationMessage(`Bundl
+            eThemes file deleted: ${uri.fsPath}`);
         invalidateBundleThemesCache();
     });
 
     context.subscriptions.push(bundleThemesFileWatcher);
 
+    // ─────────────────────────────────────────────
     // Completion provider for ShopType
+    // ─────────────────────────────────────────────
+
     const builtInShopTypes = ['Dialogue', 'SpeechBubble', 'ParrotPerch', 'CCBundle'];
 
     const shopTypeCompletionProvider = vscode.languages.registerCompletionItemProvider(
-        { language: 'json', pattern: '**/content.json' },
+        [
+            { language: 'json', pattern: '**/content.json' },
+            { language: 'jsonc', pattern: '**/content.json' }
+        ],
         {
             async provideCompletionItems(
                 document: vscode.TextDocument,
-                position: vscode.Position,
-                _token: vscode.CancellationToken,
-                _context: vscode.CompletionContext
+                position: vscode.Position
             ): Promise<vscode.CompletionItem[] | undefined> {
                 const line = document.lineAt(position.line).text;
 
+                // Only on "ShopType" lines
                 if (!line.includes('"ShopType"')) {
                     return;
                 }
@@ -322,17 +351,54 @@ export function activate(context: vscode.ExtensionContext): void {
                     return;
                 }
 
+                // Figure out the range we want to replace:
+                // from just after the opening quote up to and including the closing quote.
+                let replaceRange: vscode.Range | undefined;
+                let addComma = true;
+
+                const firstQuote = line.indexOf('"', colonIndex);
+                if (firstQuote !== -1) {
+                    const secondQuote = line.indexOf('"', firstQuote + 1);
+                    if (secondQuote !== -1) {
+                        // Check if there's already a comma right after the closing quote
+                        const after = line[secondQuote + 1];
+                        if (after === ',') {
+                            addComma = false;
+                        }
+
+                        const startPos = new vscode.Position(position.line, firstQuote + 1);
+                        const endPos = new vscode.Position(position.line, secondQuote + 1); // include closing quote
+                        replaceRange = new vscode.Range(startPos, endPos);
+                    }
+                }
+
                 const items: vscode.CompletionItem[] = [];
 
-                // Built-in types
-                for (const type of builtInShopTypes) {
+                const makeItem = (label: string, detail: string): vscode.CompletionItem => {
                     const item = new vscode.CompletionItem(
-                        type,
+                        label,
                         vscode.CompletionItemKind.EnumMember
                     );
-                    item.detail = 'Unlockable Bundles ShopType (built-in)';
-                    item.insertText = type;
-                    items.push(item);
+                    item.detail = detail;
+
+                    if (replaceRange) {
+                        // Use a snippet so we can move the cursor after the quote (and optional comma)
+                        const snippetText = addComma ? `${label}",$0` : `${label}"$0`;
+                        item.range = replaceRange;
+                        item.insertText = new vscode.SnippetString(snippetText);
+                    } else {
+                        // Fallback: just insert plain text at cursor
+                        item.insertText = label;
+                    }
+
+                    return item;
+                };
+
+                // Built-in ShopType values
+                for (const type of builtInShopTypes) {
+                    items.push(
+                        makeItem(type, 'Unlockable Bundles ShopType (built-in)')
+                    );
                 }
 
                 // Themes from workspace + ShopTypes.json
@@ -341,24 +407,23 @@ export function activate(context: vscode.ExtensionContext): void {
                     if (builtInShopTypes.includes(theme)) {
                         continue;
                     }
-                    const item = new vscode.CompletionItem(
-                        theme,
-                        vscode.CompletionItemKind.EnumMember
+                    items.push(
+                        makeItem(
+                            theme,
+                            'Unlockable Bundles ShopType (BundleTheme / ShopTypes.json)'
+                        )
                     );
-                    item.detail = 'Unlockable Bundles ShopType (BundleTheme)';
-                    item.insertText = theme;
-                    items.push(item);
                 }
 
                 return items;
             }
         },
-        '"' // trigger char
+        '"' // trigger when typing quote for the value
     );
 
     context.subscriptions.push(shopTypeCompletionProvider);
 }
 
 export function deactivate(): void {
-    // nothing to clean up manually beyond disposables
+    // nothing special to clean up beyond registered disposables
 }
