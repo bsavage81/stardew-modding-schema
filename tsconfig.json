@@ -1,12 +1,22 @@
 {
-	"compilerOptions": {
-		"module": "commonjs", // Use "commonjs" for compatibility with VS Code extensions.
-		"target": "ES2022", // Target modern JavaScript for best performance.
-		"outDir": "dist", // Match the output folder with `package.json`.
-		"lib": ["ES2022"], // Include modern ECMAScript libraries.
-		"sourceMap": true, // Enable source maps for debugging.
-		"rootDir": "src", // Ensure TypeScript compiles from the `src` directory.
-		"strict": true // Enable all strict type-checking options.
-	}
+  "compilerOptions": {
+    "module": "commonjs",
+    "target": "ES2020",
+    "lib": ["ES2020", "DOM"],
+    "outDir": "out",
+    "rootDir": "src",
+    "strict": true,
+    "sourceMap": true,
+    "esModuleInterop": true,
+    "moduleResolution": "node",
+    "resolveJsonModule": true,
+    "types": ["node", "vscode"],
+    "skipLibCheck": true
+  },
+  "include": ["src/**/*.ts"],
+  "exclude": [
+    "node_modules",
+    ".vscode-test",
+    "src/test/**"
+  ]
 }
-

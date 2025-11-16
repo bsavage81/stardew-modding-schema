@@ -2,10 +2,13 @@
   "name": "stardew-modding-schema",
   "displayName": "Stardew Modding Schema",
   "description": "Adds schema to content patcher files",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "publisher": "BSavage81",
   "engines": {
     "vscode": "^1.80.0"
+  },
+  "dependencies": {
+    "jsonc-parser": "^3.2.0"
   },
   "categories": [
     "Programming Languages"
@@ -26,6 +29,16 @@
     "onFile:manifest.json"
   ],
   "contributes": {
+    "configuration": {
+      "title": "Stardew Modding Schema",
+      "properties": {
+        "stardewModdingSchema.unlockableBundles.shopTypesPath": {
+          "type": "string",
+          "default": "",
+          "description": "Absolute path to Unlockable Bundles ShopTypes.json (usually .../Mods/Unlockable Bundles/assets/Data/ShopTypes.json). Used to suggest ShopType values from built-in UB themes."
+        }
+      }
+    },
     "languages": [
       {
         "id": "json",
@@ -41,39 +54,46 @@
     "jsonValidation": [
       {
         "fileMatch": [
-          "content.json"
+          "**/content.json"
         ],
-        "url": "https://smapi.io/schemas/content-patcher.json"
+        "url": "./schemas/content-patcher+unlockable-bundles.schema.json"
       },
       {
         "fileMatch": [
           "**/data/*.json"
         ],
-        "url": "https://smapi.io/schemas/content-patcher.json"
+        "url": "./schemas/content-patcher+unlockable-bundles.schema.json"
       },
       {
         "fileMatch": [
-          "manifest.json"
+          "**/manifest.json"
         ],
         "url": "https://smapi.io/schemas/manifest.json"
       },
       {
-        "fileMatch": ["i18n/*.json"],
+        "fileMatch": [
+          "**/i18n/*.json"
+        ],
         "url": "https://smapi.io/schemas/i18n.json"
       }
     ]
   },
-  "main": "./dist/extension.js",
+  "main": "./out/extension.js",
   "scripts": {
     "vscode:prepublish": "npm run compile",
     "compile": "tsc -p ./",
-    "watch": "tsc -watch -p ./",
-    "pretest": "npm run compile",
-    "test": "node ./out/test/runTest.js"
+    "watch": "tsc -watch -p ./"
   },
   "devDependencies": {
-    "@types/vscode": "^1.80.0",
-    "typescript": "^4.0.0",
-    "vscode-test": "^1.6.2"
+    "typescript": "^5.6.0",
+    "@types/node": "^18.0.0",
+    "@types/vscode": "^1.80.0"
+  },
+  "__metadata": {
+    "isApplicationScoped": false,
+    "installedTimestamp": 1733349586971,
+    "pinned": true,
+    "source": "vsix",
+    "size": 41899314
   }
 }

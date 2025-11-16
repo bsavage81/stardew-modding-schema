@@ -1,0 +1,722 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://example.com/schemas/content-patcher+unlockable-bundles.json",
+  "title": "Content Patcher content.json with Unlockable Bundles support",
+
+  "allOf": [
+    {
+      "$ref": "https://smapi.io/schemas/content-patcher.json"
+    },
+    {
+      "type": "object",
+      "properties": {
+        "Changes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "allOf": [
+              {
+                "if": {
+                  "type": "object",
+                  "properties": {
+                    "Action": { "const": "EditData" },
+                    "Target": { "const": "UnlockableBundles/Bundles" }
+                  },
+                  "required": ["Action", "Target"]
+                },
+                "then": {
+                  "type": "object",
+                  "properties": {
+                    "Entries": {
+                      "$ref": "#/$defs/unlockableBundlesEntries"
+                    }
+                  }
+                }
+              },
+              {
+                "if": {
+                  "type": "object",
+                  "properties": {
+                    "Action": { "const": "EditData" },
+                    "Target": { "const": "UnlockableBundles/AdvancedPricing" }
+                  },
+                  "required": ["Action", "Target"]
+                },
+                "then": {
+                  "type": "object",
+                  "properties": {
+                    "Entries": {
+                      "$ref": "#/$defs/advancedPricingEntries"
+                    }
+                  }
+                }
+              },
+              {
+                "if": {
+                  "type": "object",
+                  "properties": {
+                    "Action": { "const": "EditData" },
+                    "Target": { "const": "UnlockableBundles/WalletCurrencies" }
+                  },
+                  "required": ["Action", "Target"]
+                },
+                "then": {
+                  "type": "object",
+                  "properties": {
+                    "Entries": {
+                      "$ref": "#/$defs/walletCurrenciesEntries"
+                    }
+                  }
+                }
+              },
+              {
+                "if": {
+                  "type": "object",
+                  "properties": {
+                    "Action": { "const": "EditData" },
+                    "Target": {
+                      "const": "UnlockableBundles/PrizeTicketMachines"
+                    }
+                  },
+                  "required": ["Action", "Target"]
+                },
+                "then": {
+                  "type": "object",
+                  "properties": {
+                    "Entries": {
+                      "$ref": "#/$defs/prizeTicketMachinesEntries"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      }
+    }
+  ],
+
+  "$defs": {
+    /* ───────────── UnlockableBundles/Bundles ───────────── */
+    "unlockableBundlesEntries": {
+      "type": "object",
+      "description": "Entries for UnlockableBundles/Bundles (keys are bundle IDs).",
+      "patternProperties": {
+        "^[A-Za-z0-9_.{}\\-]+$": {
+          "$ref": "#/$defs/unlockableBundle"
+        }
+      },
+      "additionalProperties": false
+    },
+
+    "unlockableBundle": {
+      "type": "object",
+      "description": "A single Unlockable Bundles entry.",
+      "required": ["ShopType", "Location", "ShopPosition", "Price"],
+      "properties": {
+        /* Basic Information */
+        "Location": {
+          "type": "string",
+          "description": "Name of the GameLocation where the bundle shop will be placed."
+        },
+        "ShopPosition": {
+          "type": "string",
+          "description": "Tile coordinates where the bundle shop is placed (Vector2: 'x, y').",
+          "pattern": "^\\d+\\s*,\\s*\\d+$"
+        },
+        "ShopType": {
+          "type": "string",
+          "description": "Bundle type. Can be one of the known built-in types or a custom theme defined in UnlockableBundles/BundleThemes.",
+          "anyOf": [
+            {
+              "enum": ["Dialogue", "SpeechBubble", "ParrotPerch", "CCBundle"]
+            },
+            {
+              "type": "string"
+            }
+          ]
+        },
+        "AlternativeShopPositions": {
+          "type": "array",
+          "description": "Failsafe tile positions if the primary ShopPosition is occupied.",
+          "items": {
+            "type": "string",
+            "pattern": "^\\d+\\s*,\\s*\\d+$"
+          }
+        },
+        "SpecialPlacementRequirements": {
+          "type": "array",
+          "description": "List of conditions that control when the bundle is placed.",
+          "items": { "$ref": "#/$defs/placementRequirement" }
+        },
+
+        /* Appearance */
+        "ShopTexture": {
+          "type": ["string", "null"],
+          "description": "Image asset of ShopDrawDimensions proportions. Drawn at the tile above ShopPosition. Set to null or 'None' to prevent drawing."
+        },
+        "ShopColor": {
+          "type": "string",
+          "description": "Tint color for ShopTexture. Accepts RGB/RGBA, HEX, or KnownColor name."
+        },
+        "ShopAnimation": {
+          "type": "string",
+          "description": "Animation sequence '<From>-<To>@<Delay>' or comma-separated list (e.g. '0-2@300, 3, 5-4@600')."
+        },
+        "DrawQuestionMark": {
+          "type": "boolean",
+          "description": "Whether to draw a yellow question mark above the bundle shop."
+        },
+        "QuestionMarkOffset": {
+          "type": "string",
+          "description": "Offset for the question mark position (Vector2: 'x, y').",
+          "pattern": "^\\-?\\d+\\s*,\\s*\\-?\\d+$"
+        },
+        "InstantShopRemoval": {
+          "type": "boolean",
+          "description": "If true, removes the bundle shop instantly after completion; otherwise at day start/end (default depends on ShopType)."
+        },
+        "ShopTextureSource": {
+          "$ref": "#/$defs/rectangle",
+          "description": "Source rectangle of the first frame for ShopTexture/ShopAnimation."
+        },
+        "ShopDrawDimensions": {
+          "type": "string",
+          "description": "Width/height in pixels that the ShopTexture is drawn at (Vector2: 'width, height').",
+          "pattern": "^\\d+\\s*,\\s*\\d+$"
+        },
+        "ShopDrawOffset": {
+          "type": "string",
+          "description": "Pixel offset for where the ShopTexture is drawn (Vector2: 'x, y').",
+          "pattern": "^\\-?\\d+\\s*,\\s*\\-?\\d+$"
+        },
+
+        /* Cost */
+        "Price": {
+          "type": "object",
+          "description": "Dictionary<itemID as string, value as numeric>. Required items to purchase the bundle. Keys support Money, JA, qualified IDs, quality suffixes, flavored items, and AdvancedPricing (UB.AP) keys.",
+          "minProperties": 1,
+          "additionalProperties": {
+            "type": "number"
+          }
+        },
+        "PriceSpawnFields": {
+          "type": "array",
+          "description": "List<GenericSpawnItemDataWithCondition> appended to Price using Spawn Item Field syntax.",
+          "items": { "$ref": "#/$defs/genericSpawnItemDataWithCondition" }
+        },
+        "RandomPriceEntries": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "If > 0, this many Price entries are randomly selected and remembered when the bundle shop is first placed."
+        },
+        "PriceMigration": {
+          "type": "object",
+          "description": "Dictionary<oldPriceKey, newPriceKey>. Use 'Reroll' or 'Remove' as special new keys.",
+          "additionalProperties": { "type": "string" }
+        },
+
+        /* Rewards */
+        "EditMap": {
+          "type": "string",
+          "description": "Name of a map asset to place on top of EditMapLocation at EditMapPosition after completion."
+        },
+        "EditMapLocation": {
+          "type": "string",
+          "description": "GameLocation where EditMap will be applied. Defaults to Location if omitted."
+        },
+        "EditMapPosition": {
+          "type": "string",
+          "description": "Coordinates in EditMapLocation where EditMap is overlaid (Vector2: 'x, y').",
+          "pattern": "^\\d+\\s*,\\s*\\d+$"
+        },
+        "EditMapMode": {
+          "type": "string",
+          "description": "How to apply the map patch.",
+          "enum": ["Overlay", "ReplaceByLayer", "Replace"]
+        },
+        "BundleCompletedActions": {
+          "type": "array",
+          "description": "List of actions run for the player completing the bundle (e.g. AddMail, AddConversationTopic).",
+          "items": { "type": "string" }
+        },
+        "BundleCompletedMail": {
+          "type": "string",
+          "description": "Mail data string sent to every player after completion."
+        },
+        "BundleReward": {
+          "type": "object",
+          "description": "Dictionary<itemID as string, value as numeric>. Items given to the completing player via an item grab menu.",
+          "additionalProperties": { "type": "number" }
+        },
+        "BundleRewardSpawnFields": {
+          "type": "array",
+          "description": "List<GenericSpawnItemDataWithCondition> appended to BundleReward.",
+          "items": { "$ref": "#/$defs/genericSpawnItemDataWithCondition" }
+        },
+        "RandomRewardEntries": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "If > 0, this many BundleReward entries are randomly selected when the bundle is purchased."
+        },
+        "ShopEvent": {
+          "type": "string",
+          "description": "Event script played upon bundle completion. 'None' = no event. 'Carpentry' = fade + hammering."
+        },
+
+        /* Interaction */
+        "InteractionShake": {
+          "type": "boolean",
+          "description": "If true, the bundle shakes when the player approaches."
+        },
+        "InteractionSound": {
+          "type": "string",
+          "description": "Sound to play when the player approaches. Set to '' to disable."
+        },
+        "InteractionTexture": {
+          "type": "string",
+          "description": "Image asset drawn instead of ShopTexture during interaction."
+        },
+        "InteractionTextureSource": {
+          "$ref": "#/$defs/rectangle",
+          "description": "Source rectangle for InteractionTexture / InteractionAnimation."
+        },
+        "InteractionAnimation": {
+          "type": "string",
+          "description": "Animation string used instead of ShopAnimation during interaction."
+        },
+        "InteractionType": {
+          "type": "string",
+          "description": "How interaction starts.",
+          "enum": ["Touch", "Click"]
+        },
+
+        /* Overview menu */
+        "BundleName": {
+          "type": "string",
+          "description": "Name shown by some bundle types and in the overview menu."
+        },
+        "BundleDescription": {
+          "type": "string",
+          "description": "Description shown by some bundle types and in the overview menu (unless OverviewDescription is set)."
+        },
+        "OverviewTexture": {
+          "type": "string",
+          "description": "32x64px image asset drawn in the overview menu instead of ShopTexture."
+        },
+        "OverviewColor": {
+          "type": "string",
+          "description": "Tint color for OverviewTexture."
+        },
+        "OverviewTextureSource": {
+          "$ref": "#/$defs/rectangle",
+          "description": "Source rectangle for OverviewTexture / OverviewAnimation."
+        },
+        "OverviewTextureTarget": {
+          "$ref": "#/$defs/rectangle",
+          "description": "Offset and target size when drawing OverviewTexture."
+        },
+        "OverviewAnimation": {
+          "type": "string",
+          "description": "Animation string '<From>-<To>@<Delay>' for OverviewTexture."
+        },
+        "OverviewDescription": {
+          "type": "string",
+          "description": "Description used in the overview menu (overrides BundleDescription there)."
+        }
+      },
+      "additionalProperties": true
+    },
+
+    "rectangle": {
+      "type": "object",
+      "description": "Rectangle with X/Y coordinates and Width/Height in pixels.",
+      "properties": {
+        "X": { "type": "integer" },
+        "Y": { "type": "integer" },
+        "Width": { "type": "integer" },
+        "Height": { "type": "integer" }
+      },
+      "required": ["X", "Y", "Width", "Height"],
+      "additionalProperties": false
+    },
+
+    "genericSpawnItemDataWithCondition": {
+      "type": "object",
+      "description": "Spawn item data using SDV's Item Spawn Field syntax with optional conditions.",
+      "additionalProperties": true
+    },
+
+    /* ───────────── SpecialPlacementRequirements ───────────── */
+    "placementRequirement": {
+      "type": "object",
+      "description": "Special placement requirement controlling when the bundle is placed.",
+      "properties": {
+        "Type": {
+          "type": "string",
+          "description": "Placement requirement type: BundleCompletion, TriggerAction, TimeReached, GameStateQuery."
+        }
+      },
+      "required": ["Type"],
+      "oneOf": [
+        {
+          "description": "Require another bundle to be completed first.",
+          "properties": {
+            "Type": { "const": "BundleCompletion" },
+            "BundleKey": {
+              "type": "string",
+              "description": "Bundle key that must be completed before this bundle is placed."
+            },
+            "BundleSharesBuilding": {
+              "type": "boolean",
+              "description": "Set true if the prerequisite bundle is in the same instanced location."
+            }
+          },
+          "required": ["Type", "BundleKey"],
+          "additionalProperties": false
+        },
+        {
+          "description": "Require a UB_PlaceBundle TriggerAction call.",
+          "properties": {
+            "Type": { "const": "TriggerAction" },
+            "TriggerActionKey": {
+              "type": "string",
+              "description": "Optional key used with UB_PlaceBundle <Key>. Defaults to the bundle key if omitted."
+            }
+          },
+          "required": ["Type"],
+          "additionalProperties": false
+        },
+        {
+          "description": "Place bundle after a specific in-game time is reached.",
+          "properties": {
+            "Type": { "const": "TimeReached" },
+            "Time": {
+              "type": "integer",
+              "minimum": 600,
+              "maximum": 2600,
+              "description": "Time after which the bundle is placed (600 = 06:00, 2600 = 02:00)."
+            }
+          },
+          "required": ["Type", "Time"],
+          "additionalProperties": false
+        },
+        {
+          "description": "Require a GameStateQuery to be true.",
+          "properties": {
+            "Type": { "const": "GameStateQuery" },
+            "Condition": {
+              "type": "string",
+              "description": "GameStateQuery condition evaluated in the bundle's location context."
+            }
+          },
+          "required": ["Type", "Condition"],
+          "additionalProperties": false
+        }
+      ]
+    },
+
+    /* ───────────── AdvancedPricing asset ───────────── */
+    "advancedPricingEntries": {
+      "type": "object",
+      "description": "Entries for UnlockableBundles/AdvancedPricing. Keys are AdvancedPricing item IDs.",
+      "patternProperties": {
+        "^[A-Za-z0-9_.{}\\-]+$": {
+          "$ref": "#/$defs/advancedPricingItem"
+        }
+      },
+      "additionalProperties": false
+    },
+
+    "advancedPricingItem": {
+      "type": "object",
+      "description": "Definition for a single AdvancedPricing item.",
+      "properties": {
+        "Name": {
+          "type": "string",
+          "description": "Optional custom item name."
+        },
+        "Description": {
+          "type": "string",
+          "description": "Optional custom item description."
+        },
+        "ContextTags": {
+          "type": "array",
+          "description": "All context tags that must be present on a contributed item.",
+          "items": { "type": "string" }
+        },
+        "TargetColor": {
+          "type": "string",
+          "description": "Optional required color for ColoredObjects. Accepts RGB/RGBA, HEX, or KnownColor name."
+        },
+        "ItemTypes": {
+          "type": "array",
+          "description": "List of item type definitions (e.g. '(O)'). Important for CCBundle highlighting.",
+          "items": { "type": "string" }
+        },
+        "ItemCopy": {
+          "type": "string",
+          "description": "Qualified item id for the main item. Its Name, Description, and ItemSprite are used as defaults."
+        },
+        "ItemColor": {
+          "type": "string",
+          "description": "Tint color for the main item sprite."
+        },
+        "ItemSprite": {
+          "type": "string",
+          "description": "Asset for a square image of ItemSpriteSize x ItemSpriteSize pixels."
+        },
+        "ItemSpritePosition": {
+          "$ref": "#/$defs/point",
+          "description": "Texture source position of the main item sprite."
+        },
+        "ItemSpriteSize": {
+          "type": "integer",
+          "description": "Size (in px) of the square ItemSprite. Recommended: 16, 32, 64."
+        },
+        "ItemSpriteAnimation": {
+          "type": "string",
+          "description": "Animation string '<From>-<To>@<Delay>' for the ItemSprite."
+        },
+        "SubItemCopy": {
+          "type": "string",
+          "description": "Qualified item id of the sub-item drawn half-size at the top-left."
+        },
+        "SubItemColor": {
+          "type": "string",
+          "description": "Tint color for the sub-item sprite or ColoredObject color."
+        },
+        "SubItemSprite": {
+          "type": "string",
+          "description": "Asset for a square image of SubItemSpriteSize x SubItemSpriteSize pixels, drawn half-size."
+        },
+        "SubItemSpritePosition": {
+          "$ref": "#/$defs/point",
+          "description": "Texture source position of the sub-item sprite."
+        },
+        "SubItemSpriteSize": {
+          "type": "integer",
+          "description": "Size (in px) of the square sub-item sprite. Recommended: 16, 32, 64."
+        },
+        "SubItemSpriteAnimation": {
+          "type": "string",
+          "description": "Animation string '<From>-<To>@<Delay>' for the sub-item sprite."
+        }
+      },
+      "required": ["ContextTags", "ItemTypes"],
+      "additionalProperties": false
+    },
+
+    "point": {
+      "type": "object",
+      "description": "Simple 2D point { X, Y }.",
+      "properties": {
+        "X": { "type": "integer" },
+        "Y": { "type": "integer" }
+      },
+      "required": ["X", "Y"],
+      "additionalProperties": false
+    },
+
+    /* ───────────── WalletCurrencies asset ───────────── */
+    "walletCurrenciesEntries": {
+      "type": "object",
+      "description": "Entries for UnlockableBundles/WalletCurrencies. Keys are currency IDs.",
+      "patternProperties": {
+        "^[A-Za-z0-9_.{}\\-]+$": {
+          "$ref": "#/$defs/walletCurrency"
+        }
+      },
+      "additionalProperties": false
+    },
+
+    "walletCurrency": {
+      "type": "object",
+      "description": "Definition for a single wallet currency.",
+      "properties": {
+        "Items": {
+          "type": "array",
+          "description": "List<WalletCurrencyItem>. Items that convert into this currency when picked up.",
+          "items": { "$ref": "#/$defs/walletCurrencyItem" }
+        },
+        "PowersData": {
+          "$ref": "#/$defs/walletPowersData",
+          "description": "Display configuration in the 'Special Items & Powers' tab."
+        },
+        "BillboardTexture": {
+          "type": "string",
+          "description": "Square image asset for the billboard (BillboardTextureSize x BillboardTextureSize)."
+        },
+        "BillboardTextureSize": {
+          "type": "integer",
+          "description": "Size in pixels of the billboard texture (recommended: 16, 32, 64)."
+        },
+        "BillboardTexturePosition": {
+          "type": "string",
+          "description": "Source position for BillboardTexture (Vector2: 'x, y').",
+          "pattern": "^\\d+\\s*,\\s*\\d+$"
+        },
+        "BillboardAnimation": {
+          "type": "string",
+          "description": "Animation string '<From>-<To>@<Delay>' for the billboard texture."
+        },
+        "BillboardDigits": {
+          "type": "integer",
+          "description": "How many digits the billboard should display."
+        },
+        "Shared": {
+          "type": "boolean",
+          "description": "If true (default), currency is shared between all players; otherwise each player has their own wallet."
+        },
+        "HoldItemUpOnDiscovery": {
+          "type": "boolean",
+          "description": "If true, first time one of the Items is picked up, it's held above the player's head with a message."
+        },
+        "DrawOverheadPickupAnimation": {
+          "type": "boolean",
+          "description": "If true, the currency item trails above the player's head after picking it up."
+        },
+        "OverheadPickupTexture": {
+          "type": "string",
+          "description": "Square image asset for the overhead pickup animation."
+        },
+        "OverheadPickupTextureSize": {
+          "type": "integer",
+          "description": "Size in pixels of OverheadPickupTexture."
+        },
+        "OverheadPickupTexturePosition": {
+          "type": "string",
+          "description": "Source position for OverheadPickupTexture (Vector2: 'x, y').",
+          "pattern": "^\\d+\\s*,\\s*\\d+$"
+        },
+        "OverheadPickupAnimation": {
+          "type": "string",
+          "description": "Animation string '<From>-<To>@<Delay>' for the overhead pickup texture."
+        },
+        "PickupSound": {
+          "type": "string",
+          "description": "Sound that plays whenever the wallet value changes."
+        },
+        "PlayMoneyRollSound": {
+          "type": "boolean",
+          "description": "If true, plays a 'money trickling' sound when the wallet value changes."
+        }
+      },
+      "required": ["Items"],
+      "additionalProperties": false
+    },
+
+    "walletCurrencyItem": {
+      "type": "object",
+      "description": "Single wallet currency item mapping.",
+      "properties": {
+        "ItemId": {
+          "type": "string",
+          "description": "Qualified item id (e.g. '(O)388'). Avoid whitespace."
+        },
+        "Value": {
+          "type": "number",
+          "description": "Currency value of this item when received and used to pay."
+        }
+      },
+      "required": ["ItemId", "Value"],
+      "additionalProperties": false
+    },
+
+    "walletPowersData": {
+      "type": "object",
+      "description": "Display configuration for the wallet currency in the powers tab.",
+      "properties": {
+        "DisplayName": {
+          "type": "string",
+          "description": "Display name of the currency."
+        },
+        "Description": {
+          "type": "string",
+          "description": "Description shown in the powers tab."
+        },
+        "TexturePath": {
+          "type": "string",
+          "description": "Asset path for the icon texture."
+        },
+        "TexturePosition": {
+          "$ref": "#/$defs/point",
+          "description": "Source position of the icon texture."
+        },
+        "UnlockedCondition": {
+          "type": "string",
+          "description": "Condition for when the currency appears (defaults to 'UB_DISCOVERED_CURRENCY <currencyId>')."
+        }
+      },
+      "additionalProperties": false
+    },
+
+    /* ───────────── PrizeTicketMachines asset ───────────── */
+    "prizeTicketMachinesEntries": {
+      "type": "object",
+      "description": "Entries for UnlockableBundles/PrizeTicketMachines. Keys are unique prize machine IDs.",
+      "patternProperties": {
+        "^[A-Za-z0-9_.{}\\-]+$": {
+          "$ref": "#/$defs/prizeTicketMachine"
+        }
+      },
+      "additionalProperties": false
+    },
+
+    "prizeTicketMachine": {
+      "type": "object",
+      "description": "Model for a single Prize Ticket Machine.",
+      "properties": {
+        "Cost": {
+          "$ref": "#/$defs/prizeMachineItem",
+          "description": "Item cost for each prize draw."
+        },
+        "MenuTexture": {
+          "type": "string",
+          "description": "Optional alternative PrizeTicketMenu texture asset (default 'LooseSprites\\\\PrizeTicketMenu')."
+        },
+        "GuarenteedRewards": {
+          "type": "object",
+          "description": "Dictionary<Numeric, PrizeMachineItem>. Items guaranteed on specific draws (0-based index).",
+          "patternProperties": {
+            "^[A-Za-z0-9_.{}\\-]+$": {
+              "$ref": "#/$defs/prizeMachineItem"
+            }
+          },
+          "additionalProperties": false
+        },
+        "RandomRewards": {
+          "type": "object",
+          "description": "Dictionary<String, Numeric>. Weighted pool for non-guaranteed draws; keys are item IDs, values are weights.",
+          "additionalProperties": {
+            "type": "number"
+          }
+        },
+        "RandomRewardSpawnFields": {
+          "type": "array",
+          "description": "List<GenericSpawnItemDataWithCondition> appended to RandomRewards.",
+          "items": { "$ref": "#/$defs/genericSpawnItemDataWithCondition" }
+        }
+      },
+      "required": ["Cost"],
+      "additionalProperties": false
+    },
+
+    "prizeMachineItem": {
+      "type": "object",
+      "description": "PrizeMachineItem: { ItemId, Amount } used for Cost and GuarenteedRewards.",
+      "properties": {
+        "ItemId": {
+          "type": "string",
+          "description": "Item id for the prize/cost. Supports Money/GoldCoin, JA syntax, qualified IDs, flavored items, and quality suffixes."
+        },
+        "Amount": {
+          "type": "number",
+          "description": "Amount of this item used per draw or given as a reward."
+        }
+      },
+      "required": ["ItemId", "Amount"],
+      "additionalProperties": false
+    }
+  }
+}
