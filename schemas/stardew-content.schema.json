@@ -1,0 +1,30 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Stardew content.json (Content Patcher + Unlockable Bundles + Furniture Framework)",
+  "description": "Uses Furniture Framework schema when a top-level 'Furniture' property is present; otherwise uses Content Patcher plus the Unlockable Bundles extension schema.",
+
+  "allOf": [
+    {
+      "if": {
+        "type": "object",
+        "properties": {
+          "Furniture": {}
+        },
+        "required": ["Furniture"]
+      },
+      "then": {
+        "$ref": "https://raw.githubusercontent.com/Leroymilo/FurnitureFramework/main/doc/schemas/content.json"
+      },
+      "else": {
+        "allOf": [
+          {
+            "$ref": "https://smapi.io/schemas/content-patcher.json"
+          },
+          {
+            "$ref": "./unlockable-bundles.schema.json"
+          }
+        ]
+      }
+    }
+  ]
+}

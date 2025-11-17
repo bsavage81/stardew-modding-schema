@@ -1,100 +1,117 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://example.com/schemas/content-patcher+unlockable-bundles.json",
-  "title": "Content Patcher content.json with Unlockable Bundles support",
+  "$id": "https://example.com/schemas/unlockable-bundles.json",
+  "title": "Unlockable Bundles extension for content.json",
 
-  "allOf": [
-    {
-      "$ref": "https://smapi.io/schemas/content-patcher.json"
-    },
-    {
-      "type": "object",
-      "properties": {
-        "Changes": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "allOf": [
-              {
-                "if": {
-                  "type": "object",
-                  "properties": {
-                    "Action": { "const": "EditData" },
-                    "Target": { "const": "UnlockableBundles/Bundles" }
-                  },
-                  "required": ["Action", "Target"]
-                },
-                "then": {
-                  "type": "object",
-                  "properties": {
-                    "Entries": {
-                      "$ref": "#/$defs/unlockableBundlesEntries"
-                    }
-                  }
+  "type": "object",
+  "properties": {
+    "Changes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "allOf": [
+          {
+            "if": {
+              "type": "object",
+              "properties": {
+                "Action": { "const": "EditData" },
+                "Target": { "const": "UnlockableBundles/Bundles" }
+              },
+              "required": ["Action", "Target"]
+            },
+            "then": {
+              "type": "object",
+              "properties": {
+                "Entries": {
+                  "$ref": "#/$defs/unlockableBundlesEntries"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "type": "object",
+              "properties": {
+                "Action": { "const": "EditData" },
+                "Target": { "const": "UnlockableBundles/AdvancedPricing" }
+              },
+              "required": ["Action", "Target"]
+            },
+            "then": {
+              "type": "object",
+              "properties": {
+                "Entries": {
+                  "$ref": "#/$defs/advancedPricingEntries"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "type": "object",
+              "properties": {
+                "Action": { "const": "EditData" },
+                "Target": { "const": "UnlockableBundles/WalletCurrencies" }
+              },
+              "required": ["Action", "Target"]
+            },
+            "then": {
+              "type": "object",
+              "properties": {
+                "Entries": {
+                  "$ref": "#/$defs/walletCurrenciesEntries"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "type": "object",
+              "properties": {
+                "Action": { "const": "EditData" },
+                "Target": {
+                  "const": "UnlockableBundles/PrizeTicketMachines"
                 }
               },
-              {
-                "if": {
-                  "type": "object",
-                  "properties": {
-                    "Action": { "const": "EditData" },
-                    "Target": { "const": "UnlockableBundles/AdvancedPricing" }
-                  },
-                  "required": ["Action", "Target"]
-                },
-                "then": {
-                  "type": "object",
-                  "properties": {
-                    "Entries": {
-                      "$ref": "#/$defs/advancedPricingEntries"
-                    }
-                  }
+              "required": ["Action", "Target"]
+            },
+            "then": {
+              "type": "object",
+              "properties": {
+                "Entries": {
+                  "$ref": "#/$defs/prizeTicketMachinesEntries"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "type": "object",
+              "properties": {
+                "Action": { "const": "EditData" },
+                "Target": {
+                  "const": "UnlockableBundles/CompletionRibbons"
                 }
               },
-              {
-                "if": {
+              "required": ["Action", "Target"]
+            },
+            "then": {
+              "type": "object",
+              "properties": {
+                "Entries": {
                   "type": "object",
-                  "properties": {
-                    "Action": { "const": "EditData" },
-                    "Target": { "const": "UnlockableBundles/WalletCurrencies" }
-                  },
-                  "required": ["Action", "Target"]
-                },
-                "then": {
-                  "type": "object",
-                  "properties": {
-                    "Entries": {
-                      "$ref": "#/$defs/walletCurrenciesEntries"
-                    }
-                  }
-                }
-              },
-              {
-                "if": {
-                  "type": "object",
-                  "properties": {
-                    "Action": { "const": "EditData" },
-                    "Target": {
-                      "const": "UnlockableBundles/PrizeTicketMachines"
-                    }
-                  },
-                  "required": ["Action", "Target"]
-                },
-                "then": {
-                  "type": "object",
-                  "properties": {
-                    "Entries": {
-                      "$ref": "#/$defs/prizeTicketMachinesEntries"
-                    }
+                  "description": "UnlockableBundles/CompletionRibbons asset. Keys are ribbon IDs.",
+                  "additionalProperties": {
+                    "$ref": "#/$defs/UbCompletionRibbon"
                   }
                 }
               }
-            ]
+            }
           }
-        }
+        ]
       }
     }
-  ],
+  },
 
   "$defs": {
     /* ───────────── UnlockableBundles/Bundles ───────────── */
@@ -323,6 +340,12 @@
         "OverviewDescription": {
           "type": "string",
           "description": "Description used in the overview menu (overrides BundleDescription there)."
+        },
+
+        /* Completion ribbons */
+        "BundleCompletedRibbon": {
+          "type": "string",
+          "description": "Optional completion ribbon ID from UnlockableBundles/CompletionRibbons that should play when this bundle is completed."
         }
       },
       "additionalProperties": true
@@ -717,6 +740,116 @@
       },
       "required": ["ItemId", "Amount"],
       "additionalProperties": false
+    },
+
+    /* ───────────── CompletionRibbon asset ───────────── */
+    "UbCompletionRibbonEffect": {
+      "type": "object",
+      "description": "Effect entry used by UnlockableBundles/CompletionRibbons.Effects.",
+      "additionalProperties": false,
+      "properties": {
+        "Texture": {
+          "type": "string",
+          "description": "Texture asset used by this effect (drawn at 4x scale)."
+        },
+        "TextureSource": {
+          "type": "object",
+          "description": "Source rectangle within the effect texture.",
+          "properties": {
+            "X": { "type": "integer" },
+            "Y": { "type": "integer" },
+            "Width": { "type": "integer" },
+            "Height": { "type": "integer" }
+          },
+          "required": ["X", "Y", "Width", "Height"],
+          "additionalProperties": false
+        },
+        "Animation": {
+          "type": "string",
+          "description": "Animation string in the format \"<From>-<To>@<Delay>\" sequences (e.g. \"0-2@300, 3, 5-4@600\")."
+        },
+        "Position": {
+          "type": "string",
+          "description": "Vector2 position relative to the ribbon center (e.g. \"80, 0\")."
+        },
+        "Area": {
+          "type": "object",
+          "description": "Rectangle area for random effect placement.",
+          "properties": {
+            "X": { "type": "integer" },
+            "Y": { "type": "integer" },
+            "Width": { "type": "integer" },
+            "Height": { "type": "integer" }
+          },
+          "required": ["X", "Y", "Width", "Height"],
+          "additionalProperties": false
+        },
+        "Color": {
+          "type": "string",
+          "description": "Draw color (KnownColor name or rgb/rgba/hex string)."
+        },
+        "Repeat": {
+          "type": "boolean",
+          "description": "Whether this effect repeats after finishing."
+        },
+        "Drag": {
+          "type": "boolean",
+          "description": "Whether this effect is dragged alongside the ribbon after the midpoint."
+        }
+      },
+      "required": ["Texture", "TextureSource"]
+    },
+
+    "UbCompletionRibbon": {
+      "type": "object",
+      "description": "Unlockable Bundles completion ribbon definition (UnlockableBundles/CompletionRibbons).",
+      "additionalProperties": false,
+      "properties": {
+        "Texture": {
+          "type": "string",
+          "description": "Ribbon center-piece texture. Left/right edges are repeated to screen borders."
+        },
+        "TextureSource": {
+          "type": "object",
+          "description": "Source rectangle inside the ribbon texture.",
+          "properties": {
+            "X": { "type": "integer" },
+            "Y": { "type": "integer" },
+            "Width": { "type": "integer" },
+            "Height": { "type": "integer" }
+          },
+          "required": ["X", "Y", "Width", "Height"],
+          "additionalProperties": false
+        },
+        "Effects": {
+          "type": "array",
+          "description": "List of animations that play alongside the ribbon.",
+          "items": {
+            "$ref": "#/$defs/UbCompletionRibbonEffect"
+          }
+        },
+        "FadeInSound": {
+          "type": "string",
+          "description": "Sound played at the beginning of the ribbon animation (default: \"throw\")."
+        },
+        "FadeOutSound": {
+          "type": "string",
+          "description": "Sound played as the ribbon animation ends after the midpoint (default: \"tinyWhip\")."
+        },
+        "MidpointSound": {
+          "type": "string",
+          "description": "Sound played when the ribbon reaches the midpoint (default: \"newRecord\")."
+        },
+        "MidpointDuration": {
+          "type": "number",
+          "description": "How long the midpoint lasts in milliseconds (default: 2700)."
+        },
+        "CompletedTextPosition": {
+          "type": "string",
+          "description": "Vector2 relative to the top-left of the ribbon texture for the localized 'bundle complete' text (e.g. \"80, 45\")."
+        }
+      },
+      "required": ["Texture", "TextureSource"]
     }
   }
 }

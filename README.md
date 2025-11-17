@@ -1,157 +1,231 @@
-# Stardew Modding Schema README
+# Stardew Modding Schema
 
-The **Stardew Modding Schema** extension is a powerful tool designed to streamline the modding workflow for **Stardew Valley**.  
-It provides full schema validation, IntelliSense, hover documentation, and error highlighting for all major modding JSON files — including deep integration with **Content Patcher**, **SMAPI**, and **Unlockable Bundles (UB)**.
+The **Stardew Modding Schema** extension enhances VS Code with powerful IntelliSense, schema validation, hover docs, and error checking for **Stardew Valley modding**.  
+It supports **Content Patcher**, **SMAPI**, **Unlockable Bundles**, and **Furniture Framework**, automatically selecting the correct schema based on the contents of each `content.json`.
 
-With this extension, mod developers can avoid common mistakes, speed up development, and enjoy a more stable, more productive modding experience.
+This extension helps mod authors avoid mistakes, improve performance, and build high-quality mods faster.
 
 ---
 
 ## Features
 
-### ✔ **Content Patcher + SMAPI Schema Validation**
-Automatically validates:
-- `content.json` (Content Patcher)
-- `manifest.json` (SMAPI)
+## ✔ Smart Schema Selection (NEW in 1.2.0)
 
-Ensures all properties follow official schemas and highlights incorrect formats, typos, or missing fields.
+This extension uses a **meta-schema system** that automatically applies the correct schema based on what your `content.json` contains.
+
+- If the file includes a top-level **`"Furniture"`** object  
+  ➜ **Furniture Framework schema** is used.
+- Otherwise  
+  ➜ the **Content Patcher + Unlockable Bundles combined schema** is used.
+
+No configuration required.  
+No extension settings needed.  
+Just open your mod and enjoy perfect IntelliSense.
 
 ---
 
-### ✔ **Unlockable Bundles (UB) Framework Support**
-Adds **full IntelliSense and validation** for all UB assets inside `content.json`, including:
+## ✔ Content Patcher + SMAPI Schema Validation
+
+Automatically validates:
+
+- `content.json` (Content Patcher)
+- `manifest.json` (SMAPI)
+- `data/*.json` (Conditional CP validation)
+- All `i18n/*.json` translation files
+
+You get:
+- Inline documentation
+- Autocomplete
+- Type checking
+- Hover tooltips
+- Error messages on invalid CP fields
+
+---
+
+## ✔ Full Unlockable Bundles (UB) Support
+
+The extension includes a robust, standards-based schema for all UB assets:
 
 - `UnlockableBundles/Bundles`
 - `UnlockableBundles/AdvancedPricing`
 - `UnlockableBundles/WalletCurrencies`
 - `UnlockableBundles/PrizeTicketMachines`
+- `UnlockableBundles/CompletionRibbons` (NEW)
 
-Features supported:
-- Flavored items  
-- Recipe items  
-- Advanced pricing definitions  
-- Special Placement Requirements (SPR)  
-- Wallet currency systems  
-- Prize ticket machine reward structures  
-- Dynamic context tag validation  
-- Quality suffixes  
-- Spawn fields  
+Schema features include:
+- Dynamic flavored items
+- Recipe and spawn-field items
+- Pricing migration rules
+- Wallet currency item converters
+- Prize machine reward definitions
+- Full Special Placement Requirements
+- Context tag validation
+- Animation metadata
+- Built-in & custom ShopTypes
 
-All UB-related schemas activate automatically when your patch’s `Target` matches the appropriate asset.
+And more.
 
----
-
-### ✔ **Translation File Support**
-Provides schema validation + IntelliSense for:
-- `i18n/en.json`
-- `i18n/fr.json`
-- Any other languages inside an `i18n` folder.
-
-Includes:
-- Key consistency checks  
-- Highlighting of missing translation fields  
-- Inline documentation  
+All of this activates automatically when your CP patch’s `Target` matches UB assets.
 
 ---
 
-### ✔ **IntelliSense Everywhere**
-For every supported file:
-- Autocompletion  
-- Inline descriptions & property documentation  
-- Hover explanations  
-- Type checking  
-- Example-aware validation  
+## ✔ Furniture Framework Schema Support (NEW in 1.2.0)
 
-This keeps your modding JSON clean, consistent, and error-free.
+When a content pack contains:
 
----
+```json
+{
+  "Furniture": { ... }
+}```
 
-### ✔ **Live Feedback**
-When editing:
-- Invalid JSON  
-- Incorrect item IDs  
-- Unsupported Content Patcher fields  
-- Wrong structure in UB bundle definitions  
-- Broken translation files  
+The extension switches to the official **Furniture Framework content.json schema**.
 
-The extension highlights issues instantly.
+This provides:
+
+- Accurate validation  
+- Hover documentation  
+- Allowed furniture fields  
+- Error checking for FF-specific structures  
+
+All automatic.
 
 ---
 
-### ✔ **File Watcher**
-The extension listens for changes to:
-- `content.json`
-- `manifest.json`
-- `i18n/*.json`
+## ✔ Smart ShopType Completion Provider (Improved in 1.2.0)
 
-When a watched file changes, you’ll receive a lightweight notification.
+When editing UB bundle definitions, autocomplete includes:
+
+- All built-in UB types  
+- All BundleThemes defined in your workspace  
+- All types from external `ShopTypes.json`  
+
+Additional features:
+
+- Automatic cursor placement and quote/comma handling  
+- Works instantly in any `content.json`  
+- Fully cached + real-time update via file watchers  
+
+This offers the fastest and most complete UB ShopType editing experience available.
+
+---
+
+## ✔ Advanced Translation Support
+
+For any `i18n\/\*.json` file:
+
+- Full schema validation  
+- Hover descriptions  
+- JSON structure checks  
+- Missing/extra key detection (language consistency)  
+
+Supports any number of languages and automatically adapts to your translation folder structure.
+
+---
+
+## ✔ Real-Time Diagnostics & Warnings
+
+The extension warns about:
+
+- Missing `shopTypesPath` (when UB content is detected)  
+- Invalid `ShopTypes.json` paths  
+- Broken flavored item syntax  
+- Mistyped ShopTypes  
+- Invalid CP keys  
+- JSON structural errors  
+
+All warnings appear immediately in the Problems pane.
+
+---
+
+## ✔ File Watchers
+
+The extension monitors:
+
+- `content.json`  
+- `manifest.json`  
+- `i18n\/\*.json`  
+- Any file matching `*BundleThemes*.json`  
+- UB `ShopTypes.json` (external or in workspace)  
+
+Changes auto-trigger:
+
+- Cache refresh  
+- Extended validation  
+- Updated IntelliSense  
+
+No reload required.
 
 ---
 
 ## Requirements
 
-- **VS Code** 1.80.0 or later  
-- **Internet access** (for downloading official SMAPI & CP schemas)  
-- **Node.js** only required if you are modifying the extension itself  
+- **VS Code 1.80.0+**  
+- **Internet connection** (for CP + SMAPI schema URLs)  
+- **Node.js** only required if you are modifying the extension  
 
 ---
 
 ## Known Issues
 
-- Some very complex or experimental mod formats may not yet be fully covered by the schema.
-- JSON syntax errors may prevent deeper validation until resolved.
-- UB Theme definitions (`UnlockableBundles/BundleThemes`) are not yet fully typed.
+- Some highly experimental UB structures may require additional refinement.  
+- JSON syntax errors prevent deep schema validation until fixed.  
+- Furniture Framework schemas depend on the upstream FF repository remaining stable.  
 
-If you encounter something missing or incorrect, feel free to open an issue or submit a PR!
+Please report issues or submit PRs on GitHub!
 
 ---
 
 ## Release Notes
 
+### **1.2.0**
+- Added meta-schema system for automatic switching between:
+  - Furniture Framework schema  
+  - Content Patcher + UB combined schema  
+- Added standalone UB schema for improved modularity  
+- Added Completion Ribbon schema support  
+- Improved ShopType autocomplete with external + in-pack theme sources  
+- Added warnings for missing `shopTypesPath`  
+- Improved jsonc parsing and caching for ShopTypes and BundleThemes  
+- Simplified schema switching logic (moved entirely into the schema system itself)
+
 ### **1.1.0**
-- Added **full Unlockable Bundles (UB) schema integration**:
-  - Bundles  
-  - Advanced Pricing  
-  - Wallet Currencies  
-  - Prize Ticket Machines  
-- Unified Content Patcher + UB schema system for conditional validation based on patch `Target`.
-- Major IntelliSense improvements for bundle placement, pricing, rewards, and flavored items.
-- Cleaner schema registration and improved file watcher behavior.
+- Full Unlockable Bundles integration  
+- Added schemas for Bundles, Wallet Currencies, Advanced Pricing, Prize Ticket Machines  
+- Combined CP + UB schema for rich IntelliSense  
+- Conditional validation based on `EditData` patch targets  
 
 ### **1.0.1**
-- Added translation (`i18n/*.json`) schema validation and IntelliSense.
+- Added translation file schema validation for all `i18n\/\*.json` files  
 
 ### **1.0.0**
-- Initial release including:
-  - Content Patcher schema (`content.json`)
-  - SMAPI manifest schema (`manifest.json`)
-  - Live JSON error highlighting and IntelliSense
+- Initial release with Content Patcher and SMAPI manifest schema support  
+- Inline docs, autocomplete, and error highlighting  
 
 ---
 
-## Following Extension Guidelines
+## Extension Guidelines
 
-This extension follows all recommended practices from  
-[VS Code Extension Guidelines](https://code.visualstudio.com/api/references/extension-guidelines).
+This extension follows all recommended VS Code extension best practices.
 
-Contributions are welcome — improvements, schema expansions, or documentation updates!
+Contributions are welcome!
 
 ---
 
-## For More Information
+## Helpful Resources
 
-- **SMAPI Documentation**  
+- **SMAPI Docs:**  
   https://stardewvalleywiki.com/Modding:SMAPI
 
-- **Content Patcher Documentation**  
+- **Content Patcher Docs:**  
   https://stardewvalleywiki.com/Modding:Content_Patcher
 
-- **Unlockable Bundles Framework**  
-  (GitLab) https://gitlab.com/delixx/stardew-valley/unlockable-bundles
+- **Unlockable Bundles (Framework):**  
+  https://gitlab.com/delixx/stardew-valley/unlockable-bundles
 
-- **VS Code Markdown Support**  
-  https://code.visualstudio.com/docs/languages/markdown
+- **Furniture Framework:**  
+  https://github.com/Leroymilo/FurnitureFramework
 
 ---
 
-**Enjoy modding Stardew Valley with better tools, smarter validation, and smoother workflows!**
+**Enjoy cleaner, safer, faster Stardew Valley modding — with intelligent schemas built just for you.**
+

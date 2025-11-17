@@ -2,13 +2,14 @@
   "name": "stardew-modding-schema",
   "displayName": "Stardew Modding Schema",
   "description": "Adds schema to content patcher files",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "publisher": "BSavage81",
   "engines": {
     "vscode": "^1.80.0"
   },
   "dependencies": {
-    "jsonc-parser": "^3.2.0"
+    "jsonc-parser": "^3.2.0",
+    "vscode-json-languageservice": "^5.3.7"
   },
   "categories": [
     "Programming Languages"
@@ -56,13 +57,13 @@
         "fileMatch": [
           "**/content.json"
         ],
-        "url": "./schemas/content-patcher+unlockable-bundles.schema.json"
+        "url": "./schemas/stardew-content.schema.json"
       },
       {
         "fileMatch": [
           "**/data/*.json"
         ],
-        "url": "./schemas/content-patcher+unlockable-bundles.schema.json"
+        "url": "./schemas/stardew-content.schema.json"
       },
       {
         "fileMatch": [
