@@ -76,7 +76,8 @@ When a content pack contains:
 ```json
 {
   "Furniture": { ... }
-}```
+}
+```
 
 The extension switches to the official **Furniture Framework content.json schema**.
 
