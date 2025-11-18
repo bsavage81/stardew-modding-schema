@@ -1,0 +1,50 @@
+// ======================================================================
+// fashion-sense.shoes.schema.json
+// Schema for Shoes/<ShoesName>/shoes.json
+// ======================================================================
+{
+  "$id": "./fashion-sense.shoes.schema.json",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Fashion Sense – Shoes Content Pack (shoes.json)",
+  "type": "object",
+  "additionalProperties": true,
+
+  "properties": {
+    "Name": {
+      "type": "string",
+      "description": "Name of the shoes."
+    },
+    "Format": {
+      "type": "string"
+    },
+
+    "Item": {
+      "$ref": "./fashion-sense.common.schema.json#/definitions/ItemProperties"
+    },
+    "IsLocked": {
+      "$ref": "./fashion-sense.common.schema.json#/definitions/IsLocked"
+    },
+
+    "BackShoes": {
+      "$ref": "./fashion-sense.common.schema.json#/definitions/ShoesModel"
+    },
+    "RightShoes": {
+      "$ref": "./fashion-sense.common.schema.json#/definitions/ShoesModel"
+    },
+    "FrontShoes": {
+      "$ref": "./fashion-sense.common.schema.json#/definitions/ShoesModel"
+    },
+    "LeftShoes": {
+      "$ref": "./fashion-sense.common.schema.json#/definitions/ShoesModel"
+    }
+  },
+
+  "required": [ "Name" ],
+
+  "anyOf": [
+    { "required": [ "FrontShoes" ] },
+    { "required": [ "BackShoes" ] },
+    { "required": [ "LeftShoes" ] },
+    { "required": [ "RightShoes" ] }
+  ]
+}

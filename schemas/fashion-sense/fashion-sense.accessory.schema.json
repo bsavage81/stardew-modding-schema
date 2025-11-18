@@ -1,0 +1,56 @@
+// ======================================================================
+// fashion-sense.accessory.schema.json
+// Schema for Accessories/<AccessoryName>/accessory.json
+// ======================================================================
+{
+  "$id": "./fashion-sense.accessory.schema.json",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Fashion Sense – Accessory Content Pack (accessory.json)",
+  "type": "object",
+  "additionalProperties": true,
+
+  "properties": {
+    "Name": {
+      "type": "string",
+      "description": "Name of the accessory."
+    },
+    "Format": {
+      "type": "string"
+    },
+
+    "DisableGrayscale": {
+      "type": "boolean",
+      "description": "Top-level variant supported in wiki examples."
+    },
+    "DrawBeforeHair": {
+      "type": "boolean",
+      "description": "Top-level variant; also exists per-model."
+    },
+
+    "IsLocked": {
+      "$ref": "./fashion-sense.common.schema.json#/definitions/IsLocked"
+    },
+
+    "BackAccessory": {
+      "$ref": "./fashion-sense.common.schema.json#/definitions/AccessoryModel"
+    },
+    "RightAccessory": {
+      "$ref": "./fashion-sense.common.schema.json#/definitions/AccessoryModel"
+    },
+    "FrontAccessory": {
+      "$ref": "./fashion-sense.common.schema.json#/definitions/AccessoryModel"
+    },
+    "LeftAccessory": {
+      "$ref": "./fashion-sense.common.schema.json#/definitions/AccessoryModel"
+    }
+  },
+
+  "required": [ "Name" ],
+
+  "anyOf": [
+    { "required": [ "FrontAccessory" ] },
+    { "required": [ "BackAccessory" ] },
+    { "required": [ "LeftAccessory" ] },
+    { "required": [ "RightAccessory" ] }
+  ]
+}

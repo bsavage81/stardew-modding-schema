@@ -1,0 +1,439 @@
+// ======================================================================
+// fashion-sense.common.schema.json
+// Shared definitions & model types for all Fashion Sense content packs.
+// ======================================================================
+{
+  "$id": "./fashion-sense.common.schema.json",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Fashion Sense – Common Definitions",
+  "type": "object",
+  "additionalProperties": true,
+
+  "definitions": {
+    // -------------------------------------------------
+    // Basic building blocks
+    // -------------------------------------------------
+    "Vector2": {
+      "type": "object",
+      "properties": {
+        "X": { "type": "integer" },
+        "Y": { "type": "integer" }
+      },
+      "required": [ "X", "Y" ],
+      "additionalProperties": false
+    },
+
+    "Size2": {
+      "type": "object",
+      "properties": {
+        "Width":  { "type": "integer", "minimum": 0 },
+        "Length": { "type": "integer", "minimum": 0 }
+      },
+      "required": [ "Width", "Length" ],
+      "additionalProperties": false
+    },
+
+    "RGBColor": {
+      "type": "array",
+      "items": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 255
+      },
+      "minItems": 3,
+      "maxItems": 3
+    },
+
+    // -------------------------------------------------
+    // Color masks / layers / skin tone masks
+    // -------------------------------------------------
+    "ColorMasks": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/RGBColor" }
+    },
+
+    "ColorMaskLayer": {
+      "type": "object",
+      "properties": {
+        "Name": { "type": "string" },
+        "DefaultColor": { "$ref": "#/definitions/RGBColor" },
+        "Values": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/RGBColor" }
+        }
+      },
+      "required": [ "Name" ],
+      "additionalProperties": true
+    },
+
+    "ColorMaskLayers": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/ColorMaskLayer" }
+    },
+
+    "SkinToneMasks": {
+      "type": "object",
+      "properties": {
+        "LightTone":  { "$ref": "#/definitions/RGBColor" },
+        "MediumTone": { "$ref": "#/definitions/RGBColor" },
+        "DarkTone":   { "$ref": "#/definitions/RGBColor" }
+      },
+      "additionalProperties": false
+    },
+
+    // -------------------------------------------------
+    // Conditions & condition groups (per frame, etc.)
+    // -------------------------------------------------
+    "Condition": {
+      "type": "object",
+      "properties": {
+        "Name":  { "type": "string" },
+        "Value": {},
+        "Independent": { "type": "boolean" }
+      },
+      "required": [ "Name" ],
+      "additionalProperties": true
+    },
+
+    "ConditionList": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/Condition" }
+    },
+
+    "ConditionGroup": {
+      "type": "object",
+      "properties": {
+        "Name": { "type": "string" },
+        "Conditions": { "$ref": "#/definitions/ConditionList" }
+      },
+      "required": [ "Name", "Conditions" ],
+      "additionalProperties": true
+    },
+
+    "ConditionGroups": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/ConditionGroup" }
+    },
+
+    // -------------------------------------------------
+    // Animations
+    // -------------------------------------------------
+    "AnimationFrame": {
+      "type": "object",
+      "properties": {
+        "Frame": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Index of the frame in the spritesheet."
+        },
+        "Duration": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Duration in milliseconds."
+        },
+        "EndWhenFarmerFrameUpdates": {
+          "type": "boolean",
+          "description": "Pants/shoes movement behavior, etc."
+        },
+        "OverrideStartingIndex": {
+          "type": "boolean",
+          "description": "For some animation types; see FS wiki."
+        },
+        "Conditions": {
+          "$ref": "#/definitions/ConditionList"
+        }
+      },
+      "required": [ "Frame" ],
+      "additionalProperties": true
+    },
+
+    "AnimationList": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/AnimationFrame" }
+    },
+
+    // -------------------------------------------------
+    // Appearance syncing
+    // -------------------------------------------------
+    "AppearanceSync": {
+      "type": "object",
+      "properties": {
+        "TargetAppearanceType": {
+          "type": "string",
+          "enum": [ "Hat", "Hair", "Accessory", "Shirt", "Sleeves", "Pants", "Shoes" ]
+        },
+        "AnimationType": {
+          "type": "string",
+          "enum": [ "Idle", "Moving", "Uniform" ]
+        }
+      },
+      "required": [ "TargetAppearanceType", "AnimationType" ],
+      "additionalProperties": false
+    },
+
+    "AppearanceSyncing": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/AppearanceSync" }
+    },
+
+    // -------------------------------------------------
+    // Lights, scale, draw order, locking, etc.
+    // -------------------------------------------------
+    "LightProperties": {
+      "type": "object",
+      "description": "Fashion Sense 'Lights' property (simplified).",
+      "properties": {
+        "Radius":   { "type": "number" },
+        "Intensity":{ "type": "number" },
+        "Color":    { "$ref": "#/definitions/RGBColor" }
+      },
+      "additionalProperties": true
+    },
+
+    "Scale": {
+      "type": "number",
+      "description": "How much to scale the sprite when drawn. Default is 4 in FS."
+    },
+
+    "DrawOrderOverride": {
+      "type": "object",
+      "description": "See 'Draw Order Override' property in FS wiki.",
+      "properties": {
+        "Before": { "type": "string" },
+        "After":  { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+
+    "IsLocked": {
+      "description": "Locking Appearances property. Treated loosely to stay compatible with FS updates.",
+      "oneOf": [
+        { "type": "boolean" },
+        {
+          "type": "object",
+          "additionalProperties": true
+        }
+      ]
+    },
+
+    // -------------------------------------------------
+    // Wearable Item (Item Properties)
+    // -------------------------------------------------
+    "ItemProperties": {
+      "type": "object",
+      "properties": {
+        "Id":          { "type": "string" },
+        "DisplayName": { "type": "string" },
+        "Description": { "type": "string" },
+        "Price":       { "type": "integer", "minimum": 0 },
+        "InventoryScale": { "type": "number" },
+        "SpritePosition": { "$ref": "#/definitions/Vector2" },
+        "SpriteSize":     { "$ref": "#/definitions/Size2" }
+      },
+      "required": [ "SpritePosition", "SpriteSize" ],
+      "additionalProperties": false
+    },
+
+    // -------------------------------------------------
+    // Base model (common to all appearance models)
+    // -------------------------------------------------
+    "BaseModel": {
+      "type": "object",
+      "properties": {
+        "DisableGrayscale": {
+          "type": "boolean",
+          "description": "Ignore vanilla color & use sprite colors."
+        },
+        "DisableSkinGrayscale": {
+          "type": "boolean"
+        },
+        "IsPrismatic": {
+          "type": "boolean"
+        },
+        "PrismaticAnimationSpeedMultiplier": {
+          "type": "number"
+        },
+        "Flipped": {
+          "type": "boolean",
+          "description": "Used e.g. for LeftShirt, etc."
+        },
+        "ColorMasks":      { "$ref": "#/definitions/ColorMasks" },
+        "ColorMaskLayers": { "$ref": "#/definitions/ColorMaskLayers" },
+        "SkinToneMasks":   { "$ref": "#/definitions/SkinToneMasks" },
+
+        "UniformAnimation": { "$ref": "#/definitions/AnimationList" },
+        "IdleAnimation":    { "$ref": "#/definitions/AnimationList" },
+        "MovementAnimation":{ "$ref": "#/definitions/AnimationList" },
+        "RequireAnimationToFinish": { "type": "boolean" },
+
+        "AppearanceSyncing": { "$ref": "#/definitions/AppearanceSyncing" },
+
+        "Tags": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Keywords for appearance search menu."
+        },
+
+        "Lights": { "$ref": "#/definitions/LightProperties" },
+        "Scale":  { "$ref": "#/definitions/Scale" },
+        "DrawOrderOverride": { "$ref": "#/definitions/DrawOrderOverride" },
+
+        "ConditionGroups": { "$ref": "#/definitions/ConditionGroups" }
+      },
+      "additionalProperties": true
+    },
+
+    // -------------------------------------------------
+    // Specific model types
+    // -------------------------------------------------
+    "HairModel": {
+      "allOf": [
+        { "$ref": "#/definitions/BaseModel" },
+        {
+          "type": "object",
+          "properties": {
+            "StartingPosition": { "$ref": "#/definitions/Vector2" },
+            "HeadPosition":     { "$ref": "#/definitions/Vector2" },
+            "HairSize":         { "$ref": "#/definitions/Size2" }
+          },
+          "required": [ "StartingPosition", "HeadPosition", "HairSize" ],
+          "additionalProperties": true
+        }
+      ]
+    },
+
+    "HatModel": {
+      "allOf": [
+        { "$ref": "#/definitions/BaseModel" },
+        {
+          "type": "object",
+          "properties": {
+            "StartingPosition": { "$ref": "#/definitions/Vector2" },
+            "HeadPosition":     { "$ref": "#/definitions/Vector2" },
+            "HatSize":          { "$ref": "#/definitions/Size2" },
+            "HideHair":         { "type": "boolean" }
+          },
+          "required": [ "StartingPosition", "HeadPosition", "HatSize" ],
+          "additionalProperties": true
+        }
+      ]
+    },
+
+    "ShirtModel": {
+      "allOf": [
+        { "$ref": "#/definitions/BaseModel" },
+        {
+          "type": "object",
+          "properties": {
+            "StartingPosition": { "$ref": "#/definitions/Vector2" },
+            "BodyPosition":     { "$ref": "#/definitions/Vector2" },
+            "ShirtSize":        { "$ref": "#/definitions/Size2" },
+
+            "SleeveColors": {
+              "type": "array",
+              "items": { "$ref": "#/definitions/RGBColor" },
+              "description": "Custom sleeve recoloring."
+            },
+            "FromItemId": {
+              "type": "string",
+              "description": "Link to vanilla item; see Shirt Model Properties."
+            }
+          },
+          "required": [ "StartingPosition", "BodyPosition", "ShirtSize" ],
+          "additionalProperties": true
+        }
+      ]
+    },
+
+    "PantsModel": {
+      "allOf": [
+        { "$ref": "#/definitions/BaseModel" },
+        {
+          "type": "object",
+          "properties": {
+            "StartingPosition": { "$ref": "#/definitions/Vector2" },
+            "BodyPosition":     { "$ref": "#/definitions/Vector2" },
+            "PantsSize":        { "$ref": "#/definitions/Size2" }
+          },
+          "required": [ "StartingPosition", "BodyPosition", "PantsSize" ],
+          "additionalProperties": true
+        }
+      ]
+    },
+
+    "ShoesModel": {
+      "allOf": [
+        { "$ref": "#/definitions/BaseModel" },
+        {
+          "type": "object",
+          "properties": {
+            "StartingPosition": { "$ref": "#/definitions/Vector2" },
+            "BodyPosition":     { "$ref": "#/definitions/Vector2" },
+            "ShoesSize":        { "$ref": "#/definitions/Size2" }
+          },
+          "required": [ "StartingPosition", "BodyPosition", "ShoesSize" ],
+          "additionalProperties": true
+        }
+      ]
+    },
+
+    "SleevesModel": {
+      "allOf": [
+        { "$ref": "#/definitions/BaseModel" },
+        {
+          "type": "object",
+          "properties": {
+            "StartingPosition": { "$ref": "#/definitions/Vector2" },
+            "BodyPosition":     { "$ref": "#/definitions/Vector2" },
+            "SleevesSize":      { "$ref": "#/definitions/Size2" }
+          },
+          "required": [ "StartingPosition", "BodyPosition", "SleevesSize" ],
+          "additionalProperties": true
+        }
+      ]
+    },
+
+    "AccessoryModel": {
+      "allOf": [
+        { "$ref": "#/definitions/BaseModel" },
+        {
+          "type": "object",
+          "properties": {
+            "StartingPosition": { "$ref": "#/definitions/Vector2" },
+            "HeadPosition":     { "$ref": "#/definitions/Vector2" },
+            "AccessorySize":    { "$ref": "#/definitions/Size2" },
+
+            "DrawBeforeHair": { "type": "boolean" }
+          },
+          "required": [ "StartingPosition", "HeadPosition", "AccessorySize" ],
+          "additionalProperties": true
+        }
+      ]
+    },
+
+    "BodyModel": {
+      "allOf": [
+        { "$ref": "#/definitions/BaseModel" },
+        {
+          "type": "object",
+          "properties": {
+            "StartingPosition": { "$ref": "#/definitions/Vector2" },
+
+            "EyeBackgroundPosition": { "type": "integer" },
+            "EyePosition":           { "type": "integer" },
+
+            "AccessoryOffset": { "type": "integer" },
+            "LegOffset":       { "type": "integer" },
+            "HeadOffset":      { "type": "integer" },
+            "ArmsOffset":      { "type": "integer" },
+            "BodyOffset":      { "type": "integer" },
+
+            "BodySize": { "$ref": "#/definitions/Size2" }
+          },
+          "required": [ "StartingPosition", "EyePosition", "BodySize" ],
+          "additionalProperties": true
+        }
+      ]
+    }
+  }
+}

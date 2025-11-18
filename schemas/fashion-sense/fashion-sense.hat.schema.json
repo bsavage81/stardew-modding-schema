@@ -1,0 +1,54 @@
+// ======================================================================
+// fashion-sense.hat.schema.json
+// Schema for Hats/<HatName>/hat.json
+// ======================================================================
+{
+  "$id": "./fashion-sense.hat.schema.json",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Fashion Sense – Hat Content Pack (hat.json)",
+  "type": "object",
+  "additionalProperties": true,
+
+  "properties": {
+    "Name": {
+      "type": "string",
+      "description": "Name of the hat."
+    },
+    "Format": {
+      "type": "string",
+      "description": "Fashion Sense format version (recommended)."
+    },
+
+    // Wearable item (optional, but recommended if adding to shops)
+    "Item": {
+      "$ref": "./fashion-sense.common.schema.json#/definitions/ItemProperties"
+    },
+
+    // Locking appearances (mail, quests, etc.)
+    "IsLocked": {
+      "$ref": "./fashion-sense.common.schema.json#/definitions/IsLocked"
+    },
+
+    "BackHat": {
+      "$ref": "./fashion-sense.common.schema.json#/definitions/HatModel"
+    },
+    "RightHat": {
+      "$ref": "./fashion-sense.common.schema.json#/definitions/HatModel"
+    },
+    "FrontHat": {
+      "$ref": "./fashion-sense.common.schema.json#/definitions/HatModel"
+    },
+    "LeftHat": {
+      "$ref": "./fashion-sense.common.schema.json#/definitions/HatModel"
+    }
+  },
+
+  "required": [ "Name" ],
+
+  "anyOf": [
+    { "required": [ "FrontHat" ] },
+    { "required": [ "BackHat" ] },
+    { "required": [ "LeftHat" ] },
+    { "required": [ "RightHat" ] }
+  ]
+}

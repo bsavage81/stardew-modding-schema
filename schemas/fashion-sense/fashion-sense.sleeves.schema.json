@@ -1,0 +1,47 @@
+// ======================================================================
+// fashion-sense.sleeves.schema.json
+// Schema for Sleeves/<SleevesName>/sleeves.json
+// ======================================================================
+{
+  "$id": "./fashion-sense.sleeves.schema.json",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Fashion Sense – Sleeves Content Pack (sleeves.json)",
+  "type": "object",
+  "additionalProperties": true,
+
+  "properties": {
+    "Name": {
+      "type": "string",
+      "description": "Name of the sleeves."
+    },
+    "Format": {
+      "type": "string"
+    },
+
+    "IsLocked": {
+      "$ref": "./fashion-sense.common.schema.json#/definitions/IsLocked"
+    },
+
+    "BackSleeves": {
+      "$ref": "./fashion-sense.common.schema.json#/definitions/SleevesModel"
+    },
+    "RightSleeves": {
+      "$ref": "./fashion-sense.common.schema.json#/definitions/SleevesModel"
+    },
+    "FrontSleeves": {
+      "$ref": "./fashion-sense.common.schema.json#/definitions/SleevesModel"
+    },
+    "LeftSleeves": {
+      "$ref": "./fashion-sense.common.schema.json#/definitions/SleevesModel"
+    }
+  },
+
+  "required": [ "Name" ],
+
+  "anyOf": [
+    { "required": [ "FrontSleeves" ] },
+    { "required": [ "BackSleeves" ] },
+    { "required": [ "LeftSleeves" ] },
+    { "required": [ "RightSleeves" ] }
+  ]
+}

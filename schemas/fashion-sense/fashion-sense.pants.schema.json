@@ -1,0 +1,50 @@
+// ======================================================================
+// fashion-sense.pants.schema.json
+// Schema for Pants/<PantsName>/pants.json
+// ======================================================================
+{
+  "$id": "./fashion-sense.pants.schema.json",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Fashion Sense – Pants Content Pack (pants.json)",
+  "type": "object",
+  "additionalProperties": true,
+
+  "properties": {
+    "Name": {
+      "type": "string",
+      "description": "Name of the pants."
+    },
+    "Format": {
+      "type": "string"
+    },
+
+    "Item": {
+      "$ref": "./fashion-sense.common.schema.json#/definitions/ItemProperties"
+    },
+    "IsLocked": {
+      "$ref": "./fashion-sense.common.schema.json#/definitions/IsLocked"
+    },
+
+    "BackPants": {
+      "$ref": "./fashion-sense.common.schema.json#/definitions/PantsModel"
+    },
+    "RightPants": {
+      "$ref": "./fashion-sense.common.schema.json#/definitions/PantsModel"
+    },
+    "FrontPants": {
+      "$ref": "./fashion-sense.common.schema.json#/definitions/PantsModel"
+    },
+    "LeftPants": {
+      "$ref": "./fashion-sense.common.schema.json#/definitions/PantsModel"
+    }
+  },
+
+  "required": [ "Name" ],
+
+  "anyOf": [
+    { "required": [ "FrontPants" ] },
+    { "required": [ "BackPants" ] },
+    { "required": [ "LeftPants" ] },
+    { "required": [ "RightPants" ] }
+  ]
+}
