@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [1.2.0] - 2025-02-15
+## [1.2.1] - 2025-02-15
 ### Added
 - Introduced a new **meta content.json schema** (`stardew-content.schema.json`) which automatically selects the correct framework schema:
   - **Furniture Framework schema** is applied when a top-level `"Furniture"` object is present.

@@ -178,7 +178,7 @@ Please report issues or submit PRs on GitHub!
 
 ## Release Notes
 
-### **1.2.0**
+### **1.2.1**
 - Added meta-schema system for automatic switching between:
   - Furniture Framework schema  
   - Content Patcher + UB combined schema  

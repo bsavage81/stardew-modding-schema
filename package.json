@@ -2,7 +2,7 @@
   "name": "stardew-modding-schema",
   "displayName": "Stardew Modding Schema",
   "description": "Adds schema to content patcher files",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "publisher": "BSavage81",
   "engines": {
     "vscode": "^1.80.0"
