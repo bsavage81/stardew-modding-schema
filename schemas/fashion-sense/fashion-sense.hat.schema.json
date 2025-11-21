@@ -3,7 +3,7 @@
 // Schema for Hats/<HatName>/hat.json
 // ======================================================================
 {
-  "$id": "./fashion-sense.hat.schema.json",
+  "$id": "https://github.com/bsavage81/stardew-modding-schema/blob/0c19708e165e6c5eaafbbf5826641c40b8467072/fashion-sense.hat.schema.json",
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "Fashion Sense – Hat Content Pack (hat.json)",
   "type": "object",

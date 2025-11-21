@@ -1,8 +1,8 @@
 {
   "name": "stardew-modding-schema",
   "displayName": "Stardew Modding Schema",
-  "description": "Adds schema to content patcher files",
-  "version": "1.2.1",
+  "description": "Adds schema validation for Content Patcher, Unlockable Bundles, Furniture Framework, Monster Variety, and Fashion Sense.",
+  "version": "1.3.0",
   "publisher": "BSavage81",
   "engines": {
     "vscode": "^1.80.0"
@@ -36,7 +36,7 @@
         "stardewModdingSchema.unlockableBundles.shopTypesPath": {
           "type": "string",
           "default": "",
-          "description": "Absolute path to Unlockable Bundles ShopTypes.json (usually .../Mods/Unlockable Bundles/assets/Data/ShopTypes.json). Used to suggest ShopType values from built-in UB themes."
+          "description": "Absolute path to Unlockable Bundles ShopTypes.json (usually .../Mods/Unlockable Bundles/assets/Data/ShopTypes.json). Used for ShopType completions."
         }
       }
     },
@@ -61,7 +61,7 @@
       },
       {
         "fileMatch": [
-          "**/data/*.json"
+          "**/{data,Data}/**/*.json"
         ],
         "url": "./schemas/stardew-content.schema.json"
       },
@@ -76,6 +76,54 @@
           "**/i18n/*.json"
         ],
         "url": "https://smapi.io/schemas/i18n.json"
+      },
+      {
+        "fileMatch": [
+          "**/hair.json"
+        ],
+        "url": "./schemas/fashion-sense/fashion-sense.hair.schema.json"
+      },
+      {
+        "fileMatch": [
+          "**/hat.json"
+        ],
+        "url": "./schemas/fashion-sense/fashion-sense.hat.schema.json"
+      },
+      {
+        "fileMatch": [
+          "**/shirt.json"
+        ],
+        "url": "./schemas/fashion-sense/fashion-sense.shirt.schema.json"
+      },
+      {
+        "fileMatch": [
+          "**/sleeves.json"
+        ],
+        "url": "./schemas/fashion-sense/fashion-sense.sleeves.schema.json"
+      },
+      {
+        "fileMatch": [
+          "**/pants.json"
+        ],
+        "url": "./schemas/fashion-sense/fashion-sense.pants.schema.json"
+      },
+      {
+        "fileMatch": [
+          "**/shoes.json"
+        ],
+        "url": "./schemas/fashion-sense/fashion-sense.shoes.schema.json"
+      },
+      {
+        "fileMatch": [
+          "**/accessory.json"
+        ],
+        "url": "./schemas/fashion-sense/fashion-sense.accessory.schema.json"
+      },
+      {
+        "fileMatch": [
+          "**/body.json"
+        ],
+        "url": "./schemas/fashion-sense/fashion-sense.body.schema.json"
       }
     ]
   },
@@ -89,12 +137,5 @@
     "typescript": "^5.6.0",
     "@types/node": "^18.0.0",
     "@types/vscode": "^1.80.0"
-  },
-  "__metadata": {
-    "isApplicationScoped": false,
-    "installedTimestamp": 1733349586971,
-    "pinned": true,
-    "source": "vsix",
-    "size": 41899314
   }
 }

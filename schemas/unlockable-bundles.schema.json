@@ -1,6 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://example.com/schemas/unlockable-bundles.json",
+  "$id": "https://github.com/bsavage81/stardew-modding-schema/blob/0c19708e165e6c5eaafbbf5826641c40b8467072/schemas/unlockable-bundles.json",
   "title": "Unlockable Bundles extension for content.json",
 
   "type": "object",

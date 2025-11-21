@@ -3,7 +3,7 @@
 // Schema for Sleeves/<SleevesName>/sleeves.json
 // ======================================================================
 {
-  "$id": "./fashion-sense.sleeves.schema.json",
+  "$id": "https://github.com/bsavage81/stardew-modding-schema/blob/0c19708e165e6c5eaafbbf5826641c40b8467072/fashion-sense.sleeves.schema.json",
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "Fashion Sense – Sleeves Content Pack (sleeves.json)",
   "type": "object",

@@ -3,7 +3,7 @@
 // Schema for Pants/<PantsName>/pants.json
 // ======================================================================
 {
-  "$id": "./fashion-sense.pants.schema.json",
+  "$id": "https://github.com/bsavage81/stardew-modding-schema/blob/0c19708e165e6c5eaafbbf5826641c40b8467072/fashion-sense.pants.schema.json",
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "Fashion Sense – Pants Content Pack (pants.json)",
   "type": "object",

@@ -1,0 +1,472 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "vscode://schemas/monster-variety",
+  "title": "Monster Variety Data",
+  "description": "Data asset for mushymato.MonsterVariety/Data. Defines per-monster reskins, dangerous variants, and extra drops.",
+  "type": "object",
+  "additionalProperties": {
+    "type": "object",
+    "description": "Monster variety definition for a specific monster name or group.",
+    "properties": {
+      "Id": {
+        "type": "string",
+        "description": "Unique ID for this MonsterVariety entry. Should normally match the root key, e.g. '{{ModId}}_armored bug'."
+      },
+      "MonsterName": {
+        "description": "Internal monster name to match. Case-insensitive; supports vanilla and modded monsters.",
+        "anyOf": [
+          {
+            "type": "string",
+            "enum": [
+              "angry roger",
+              "armored bug",
+              "armored bug_dangerous",
+              "assassin bug",
+              "bat",
+              "bat_dangerous",
+              "big slime",
+              "blue squid",
+              "bug",
+              "bug_dangerous",
+              "carbon ghost",
+              "cat",
+              "crow",
+              "duggy",
+              "duggy_dangerous",
+              "dust spirit",
+              "dust spirit_dangerous",
+              "dwarvish sentry",
+              "false magma cap",
+              "fireball",
+              "fly",
+              "fly_dangerous",
+              "frog",
+              "frost bat",
+              "frost bat_dangerous",
+              "ghost",
+              "green slime",
+              "green slime_dangerous",
+              "grub",
+              "grub_dangerous",
+              "haunted skull",
+              "haunted skull_dangerous",
+              "hot head",
+              "iridium bat",
+              "iridium crab",
+              "iridium golem",
+              "lava bat",
+              "lava crab",
+              "lava crab_dangerous",
+              "lava lurk",
+              "magma duggy",
+              "magma sparker",
+              "magma sprite",
+              "metal head",
+              "metal head_dangerous",
+              "mummy",
+              "mummy_dangerous",
+              "pepper rex",
+              "putrid ghost",
+              "rock crab",
+              "rock crab_dangerous",
+              "royal serpent",
+              "serpent",
+              "shadow brute",
+              "shadow brute_dangerous",
+              "shadow girl",
+              "shadow shaman",
+              "shadow shaman_dangerous",
+              "shadow sniper",
+              "skeleton mage",
+              "skeleton mage_dangerous",
+              "skeleton",
+              "skeleton_dangerous",
+              "spider",
+              "spiker",
+              "squid kid",
+              "squid kid_dangerous",
+              "stick bug",
+              "stone golem",
+              "stone golem_dangerous",
+              "tiger slime",
+              "truffle crab",
+              "wilderness golem"
+            ],
+            "enumDescriptions": [
+              "Special desert festival bug miniboss.",
+              "Armored bug from Skull Cavern with high defense.",
+              "Stronger Skull Cavern armored bug from dangerous mines.",
+              "Assassin bug from the Desert Festival with high damage.",
+              "Standard cave bat from early mines.",
+              "Stronger bat variant in dangerous mines.",
+              "Oversized slime which can split into smaller slimes.",
+              "Blue squid from the volcano dungeon on Ginger Island.",
+              "Basic green bug from early mine levels.",
+              "Stronger bug variant from dangerous mines.",
+              "Carbon ghost enemy found in late mine levels.",
+              "Cat-like monster used in special maps or events.",
+              "Crow enemy used in special locations or cutscenes.",
+              "Mole-like monster that attacks from underground in mines.",
+              "Dangerous-version duggy that hits harder.",
+              "Dusty floating monster from mid mine levels.",
+              "Stronger dust spirit in dangerous mines.",
+              "Stationary dwarvish sentry turret in the mines.",
+              "Mushroom mimic enemy in the volcano dungeon.",
+              "Ranged fireball projectile enemy spawned by others.",
+              "Flying insect that hatches from grubs.",
+              "Stronger fly variant from dangerous mines.",
+              "Small hopping frog enemy used in some maps.",
+              "Ice bat from mid-level icy mine floors.",
+              "Dangerous-version frost bat.",
+              "Standard ghost enemy found in mid mine levels.",
+              "Common green slime from early mine floors.",
+              "Stronger green slime in dangerous mines.",
+              "Larval monster that can transform into a fly.",
+              "Dangerous-version grub with higher stats.",
+              "Flying skull enemy in late mine levels.",
+              "Dangerous-version haunted skull.",
+              "Exploding fire-type head enemy from the volcano.",
+              "Late-game bat variant that can drop iridium.",
+              "Crab disguised as an iridium node.",
+              "Large iridium golem that can drop iridium.",
+              "Fire bat from deep mine levels.",
+              "Crab disguised as a magma rock.",
+              "Dangerous-version lava crab.",
+              "Fish-like magma enemy found in lava pools.",
+              "Volcano version of duggy that emerges from lava.",
+              "Volcano floating head that shoots projectiles.",
+              "Small bouncing fire sprite in the volcano.",
+              "Armored metal golem from mid mine levels.",
+              "Dangerous-version metal head.",
+              "Wrapped undead monster in Skull Cavern.",
+              "Dangerous-version mummy with higher stats.",
+              "Dinosaur-like monster that breathes fire.",
+              "Poisonous ghost that inflicts debuffs.",
+              "Crab disguised as a rock in early mines.",
+              "Dangerous-version rock crab.",
+              "Large golden serpent found in Skull Cavern.",
+              "Flying serpent enemy in Skull Cavern.",
+              "Melee shadow enemy in late mine levels.",
+              "Dangerous-version shadow brute.",
+              "Shadow person girl variant used in mines.",
+              "Spellcasting shadow enemy that heals others.",
+              "Dangerous-version shadow shaman.",
+              "Ranged shadow enemy that fires projectiles.",
+              "Skeleton spellcaster using magical attacks.",
+              "Dangerous-version skeleton mage.",
+              "Basic skeleton enemy in late mine levels.",
+              "Dangerous-version skeleton.",
+              "Spider enemy used in special locations.",
+              "Spiked rolling enemy that patrols corridors.",
+              "Floating squid enemy that shoots fireballs.",
+              "Dangerous-version squid kid.",
+              "Tall stick-like bug monster found in special woods.",
+              "Stone golem from early mine levels.",
+              "Dangerous-version stone golem.",
+              "Rare jungle slime type found in tiger areas.",
+              "Crab disguised as a truffle in late-game areas.",
+              "Golem that spawns on the farm with the Wilderness layout."
+            ]
+          },
+          {
+            "type": "string"
+          }
+        ]
+      },
+      "Varieties": {
+        "type": "object",
+        "description": "Variety definitions for the regular (non-dangerous) version of this monster. Keys are variety IDs like '{{ModId}}_armored bug/texture_0' or 'Default'.",
+        "additionalProperties": {
+          "type": "object",
+          "description": "One visual or behavioral variety of the monster.",
+          "properties": {
+            "Sprite": {
+              "type": "string",
+              "description": "Texture name to load for this variety, e.g. '{{ModId}}_armored bug/texture_0' or 'Characters/Monsters/Armored Bug'."
+            },
+            "Condition": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "Optional Game State Query that must be true for this variety to apply."
+            },
+            "Season": {
+              "description": "Optional current season name to match (location-aware).",
+              "anyOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "spring",
+                    "summer",
+                    "fall",
+                    "winter"
+                  ]
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "Precedence": {
+              "type": "integer",
+              "default": 0,
+              "description": "Order to check this variety in. Lower values are evaluated earlier."
+            },
+            "AlwaysOverride": {
+              "description": "Controls how this variety overrides custom monster classes and textures.",
+              "oneOf": [
+                {
+                  "type": "boolean",
+                  "description": "Shorthand: false = no forced overrides; true = override both custom monster classes and custom textures."
+                },
+                {
+                  "type": "object",
+                  "description": "Advanced override configuration.",
+                  "properties": {
+                    "CustomMonsterClass": {
+                      "type": "boolean",
+                      "default": false,
+                      "description": "If true, apply this variety to custom monster classes (not just StardewValley.Monsters)."
+                    },
+                    "CustomTextures": {
+                      "type": "boolean",
+                      "default": false,
+                      "description": "If true, apply this variety to monsters using custom textures (not just vanilla texture list)."
+                    },
+                    "SpecificTextureName": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "description": "If set, only override when the monster's current texture name matches this value."
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              ]
+            },
+            "HUDNotif": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "Optional HUD notification message shown when this variety appears."
+            },
+            "HUDNotifIconItem": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "Optional item icon for the HUD notification.",
+              "$ref": "./stardew-item-id.schema.json"
+            },
+            "LightProps": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "Optional light source attached to the monster. Format 'Radius' or 'Radius Color', e.g. '5', '5 Red'."
+            },
+            "ExtraDrops": {
+              "type": "object",
+              "description": "Extra item drops for monsters using this variety. Values are item queries.",
+              "additionalProperties": {
+                "type": "object",
+                "description": "Extra drop entry using Stardew item queries.",
+                "properties": {
+                  "Id": {
+                    "type": "string",
+                    "description": "Unique ID for this extra drop (per mod), e.g. '{{ModId}}_ExtraMeat1'."
+                  },
+                  "ItemId": {
+                    "description": "Item query string, e.g. '(O)684'.",
+                    "$ref": "./stardew-item-id.schema.json"
+                  },
+                  "Condition": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "description": "Optional Game State Query to gate this extra drop."
+                  }
+                }
+              }
+            }
+          },
+          "required": [
+            "Sprite"
+          ]
+        }
+      },
+      "SharedExtraDrops": {
+        "type": "object",
+        "description": "Extra drops shared by all regular monsters with this MonsterName.",
+        "additionalProperties": {
+          "type": "object",
+          "description": "Shared extra drop entry using Stardew item queries.",
+          "properties": {
+            "Id": {
+              "type": "string",
+              "description": "Unique ID for this shared extra drop, e.g. '{{ModId}}_ExtraMeat2'."
+            },
+            "ItemId": {
+              "description": "Item query string, e.g. '(O)684'.",
+              "$ref": "./stardew-item-id.schema.json"
+            },
+            "Condition": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "Optional Game State Query to gate this shared extra drop."
+            }
+          }
+        }
+      },
+      "DangerousVarieties": {
+        "type": "object",
+        "description": "Variety definitions for the dangerous version of this monster. Same structure as Varieties but applied to dangerous monsters.",
+        "additionalProperties": {
+          "type": "object",
+          "description": "One dangerous variety of the monster.",
+          "properties": {
+            "Sprite": {
+              "type": "string",
+              "description": "Texture name for this dangerous variety, e.g. '{{ModId}}_armored bug_dangerous/texture_0'."
+            },
+            "Condition": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "Optional Game State Query that must be true for this dangerous variety."
+            },
+            "Season": {
+              "description": "Optional season restriction for this dangerous variety.",
+              "anyOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "spring",
+                    "summer",
+                    "fall",
+                    "winter"
+                  ]
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "Precedence": {
+              "type": "integer",
+              "default": 0,
+              "description": "Order to check this dangerous variety in. Lower values are evaluated earlier."
+            },
+            "AlwaysOverride": {
+              "description": "Override rules for dangerous varieties. Same semantics as for regular Varieties.",
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "CustomMonsterClass": {
+                      "type": "boolean",
+                      "default": false
+                    },
+                    "CustomTextures": {
+                      "type": "boolean",
+                      "default": false
+                    },
+                    "SpecificTextureName": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              ]
+            },
+            "HUDNotif": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "HUDNotifIconItem": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "$ref": "./stardew-item-id.schema.json"
+            },
+            "LightProps": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "ExtraDrops": {
+              "type": "object",
+              "description": "Extra drops for this dangerous variety.",
+              "additionalProperties": {
+                "type": "object",
+                "properties": {
+                  "Id": {
+                    "type": "string"
+                  },
+                  "ItemId": {
+                    "description": "Item query string, e.g. '(O)684'.",
+                    "$ref": "./stardew-item-id.schema.json"
+                  },
+                  "Condition": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "required": [
+            "Sprite"
+          ]
+        }
+      },
+      "DangerousSharedExtraDrops": {
+        "type": "object",
+        "description": "Extra drops shared by all dangerous monsters with this MonsterName.",
+        "additionalProperties": {
+          "type": "object",
+          "properties": {
+            "Id": {
+              "type": "string",
+              "description": "Unique ID for this shared dangerous drop, e.g. '{{ModId}}_ExtraMeat3'."
+            },
+            "ItemId": {
+              "description": "Item query string, e.g. '(O)684'.",
+              "$ref": "./stardew-item-id.schema.json"
+            },
+            "Condition": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "Optional Game State Query to gate this shared dangerous drop."
+            }
+          }
+        }
+      }
+    },
+    "required": [
+      "Id",
+      "MonsterName"
+    ]
+  }
+}

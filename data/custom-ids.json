@@ -1,0 +1,57 @@
+// custom-ids.json
+// Usage:
+// - Place this file in your extension at: data/custom-ids.json
+// - Structure is the SAME as stardew-ids.json:
+//     {
+//       "categoryTypes": { ... }, // optional for custom
+//       "objects": [ ... ],
+//       "weapons": [ ... ],
+//       "hats": [ ... ],
+//       ...
+//     }
+// - You can do TWO main things:
+//   1) Add new custom items with brand-new qualified IDs
+//      - Example: "(O)9000" for a custom object
+//      - These will show up in completion/hover as “(name) (category, custom)”
+//   2) Override vanilla display for an existing qualified ID
+//      - Example: re-define "(O)0" with a new name
+//      - The loader treats the custom entry as the final one for that qualifiedId
+// - Fields per entry:
+//     id          → numeric or string ID your mod uses (you pick)
+//     name        → display name for hover in the editor
+//     qualifiedId → full qualified ID like "(O)9000", "(BC)500", "(W)999"
+// - You only need to include categories you actually use. Others can be omitted entirely.
+
+{
+  // Optional: included only for clarity; the loader does not rely on these for custom IDs.
+  "categoryTypes": {
+    "objects": "O",
+    "bigCraftables": "BC",
+    "weapons": "W"
+  },
+
+  "objects": [
+    // 1) New custom object
+    {
+      "id": 9000,
+      "name": "Mystic Turnip",
+      "qualifiedId": "(O)9000"
+    },
+
+    // 2) Override an existing vanilla qualifiedId with a better label for your workspace
+    //    (If stardew-ids.json already has "(O)2", this one will win at runtime.)
+    {
+      "id": 2,
+      "name": "Diamond Stone (Overridden Name)",
+      "qualifiedId": "(O)2"
+    }
+  ],
+
+  "weapons": [
+    {
+      "id": 9100,
+      "name": "Savage’s Debug Sword",
+      "qualifiedId": "(W)9100"
+    }
+  ]
+}

@@ -3,7 +3,7 @@
 // Schema for Shirts/<ShirtName>/shirt.json
 // ======================================================================
 {
-  "$id": "./fashion-sense.shirt.schema.json",
+  "$id": "https://github.com/bsavage81/stardew-modding-schema/blob/0c19708e165e6c5eaafbbf5826641c40b8467072/fashion-sense.shirt.schema.json",
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "Fashion Sense – Shirt Content Pack (shirt.json)",
   "type": "object",
