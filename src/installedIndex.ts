@@ -21,8 +21,33 @@ type KnownModsMap = Map<string, string>; // UniqueID -> Name
 // - Prevents multiple rebuilds running at once
 // - Coalesces spammy auto rebuild triggers into at most 1 extra run
 // -----------------------------------------------------------------------------
+// Also adds START/END markers with a run id so we can confirm whether we're
+// actually rebuilding repeatedly, or just logging a lot during one run.
+// -----------------------------------------------------------------------------
 let rebuildInFlight: Promise<void> | null = null;
 let pendingAutoRebuild = false;
+
+let rebuildRunId = 0;
+
+// Optional: throttle auto rebuilds so file watcher storms don't cause a loop of
+// "finish rebuild -> immediately start another".
+let lastAutoRebuildAt = 0;
+const AUTO_REBUILD_MIN_MS = 10_000; // 10s
+
+// -----------------------------------------------------------------------------
+// Debug logging control (Installed Indexer)
+// Enable with env var:
+//   STARDEW_SCHEMA_DEBUG_INSTALLED_INDEX=1
+// -----------------------------------------------------------------------------
+function installedIndexDebugEnabled(): boolean {
+  return process.env.STARDEW_SCHEMA_DEBUG_INSTALLED_INDEX === "1";
+}
+
+function dbg(msg: string): void {
+  if (installedIndexDebugEnabled()) {
+    console.log(msg);
+  }
+}
 
 async function runRebuildGuarded(
   context: vscode.ExtensionContext,
@@ -42,11 +67,20 @@ async function runRebuildGuarded(
     }
   }
 
+  const myRunId = ++rebuildRunId;
+  const started = Date.now();
+
+  console.log(
+    `[Stardew Modding Schema] Installed index rebuild START (#${myRunId}, auto=${auto})`
+  );
+
   const task = (async () => {
     try {
       await doRebuildInstalledItemIndex(context, auto, progress);
     } catch (err) {
-      console.error("[Stardew Modding Schema] Installed index rebuild failed.");
+      console.error(
+        `[Stardew Modding Schema] Installed index rebuild FAILED (#${myRunId}).`
+      );
       console.error(err);
     }
   })();
@@ -57,6 +91,11 @@ async function runRebuildGuarded(
     await task;
   } finally {
     rebuildInFlight = null;
+
+    const ms = Date.now() - started;
+    console.log(
+      `[Stardew Modding Schema] Installed index rebuild END (#${myRunId}) in ${ms}ms`
+    );
   }
 
   if (auto && pendingAutoRebuild) {
@@ -176,28 +215,19 @@ function expandTokensInAny(value: any, tokenMap?: Map<string, string>): any {
 function friendlyFromLocalizedTextKey(rawKey: string): string {
   if (!rawKey) return rawKey;
 
-  // rawKey might be like: "Strings\\Objects:IceOrbRing_Name"
-  // or: "Strings\Objects:IceOrbRing_Name"
-  // or include slashes.
   const key = rawKey.replace(/^"+|"+$/g, "").trim();
 
-  // Take the part after the last colon if present
   const colonIdx = key.lastIndexOf(":");
   let tail = colonIdx >= 0 ? key.slice(colonIdx + 1) : key;
 
   tail = tail.trim();
 
-  // Strip common suffixes
   tail = tail.replace(/_(DisplayName|Name|title|Title|label|Label)$/i, "");
   tail = tail.replace(/\.?(DisplayName|Name)$/i, "");
 
-  // Replace underscores with spaces
   tail = tail.replace(/_/g, " ");
-
-  // Light camelcase split (handles "IceOrbRing" -> "Ice Orb Ring")
   tail = tail.replace(/([a-z0-9])([A-Z])/g, "$1 $2");
 
-  // Collapse whitespace
   tail = tail.replace(/\s+/g, " ").trim();
 
   return tail || rawKey;
@@ -211,7 +241,6 @@ function friendlyFromLocalizedTextKey(rawKey: string): string {
 function resolveLocalizedTextInString(input: string): string {
   if (typeof input !== "string" || !input) return input;
 
-  // whole token or embedded token
   return input.replace(
     /\[\s*LocalizedText\s+([^\]]+?)\s*]/gi,
     (_m, innerKey) => {
@@ -239,7 +268,6 @@ function resolveI18nTokensInString(
 
   let value = input;
 
-  // Only match i18n tokens where the key doesn't contain braces on that pass.
   const re = /\{\{\s*i18n\s*:\s*([^{}]+?)\s*}}/gi;
 
   for (let pass = 0; pass < maxPasses; pass++) {
@@ -250,7 +278,6 @@ function resolveI18nTokensInString(
       const translated = modI18n.get(key);
       if (translated && translated.trim()) return translated.trim();
 
-      // If no translation exists, at least return the key
       return key;
     });
 
@@ -280,13 +307,9 @@ function makeNameReadable(
   s = expandDynamicTokens(s, dynamicTokens);
   s = s.replace(/\{\{\s*modid\s*\}\}/gi, modId);
 
-  // Resolve CP i18n (multiple/nested passes)
   s = resolveI18nTokensInString(s, modI18n);
-
-  // Resolve Stardew LocalizedText tokens
   s = resolveLocalizedTextInString(s);
 
-  // Final whitespace cleanup
   s = s.replace(/\s+/g, " ").trim();
 
   return s;
@@ -568,18 +591,17 @@ function resolveOwningModForInnerId(
 /**
  * Map Content Patcher EditData targets → category + prefix.
  */
-const TARGET_TO_CATEGORY: Record<string, { prefix: string; category: string }> =
-  {
-    "Data/Objects": { prefix: "O", category: "objects" },
-    "Data/BigCraftables": { prefix: "BC", category: "bigCraftables" },
-    "Data/Weapons": { prefix: "W", category: "weapons" },
-    "Data/Furniture": { prefix: "F", category: "furniture" },
-    "Data/Boots": { prefix: "B", category: "boots" },
-    "Data/Hats": { prefix: "H", category: "hats" },
-    "Data/Shirts": { prefix: "S", category: "shirts" },
-    "Data/Pants": { prefix: "P", category: "pants" },
-    "Data/Tools": { prefix: "T", category: "tools" },
-  };
+const TARGET_TO_CATEGORY: Record<string, { prefix: string; category: string }> = {
+  "Data/Objects": { prefix: "O", category: "objects" },
+  "Data/BigCraftables": { prefix: "BC", category: "bigCraftables" },
+  "Data/Weapons": { prefix: "W", category: "weapons" },
+  "Data/Furniture": { prefix: "F", category: "furniture" },
+  "Data/Boots": { prefix: "B", category: "boots" },
+  "Data/Hats": { prefix: "H", category: "hats" },
+  "Data/Shirts": { prefix: "S", category: "shirts" },
+  "Data/Pants": { prefix: "P", category: "pants" },
+  "Data/Tools": { prefix: "T", category: "tools" },
+};
 
 const PREFIX_TO_CATEGORY_KEY: Record<string, string> = {
   O: "objects",
@@ -653,7 +675,7 @@ function resolveFurnitureInlineDisplayName(
   const parts = expanded.split("/");
 
   const internalName = (parts[0] ?? "").trim();
-  let displayPart = (parts[7] ?? "").trim();
+  const displayPart = (parts[7] ?? "").trim();
 
   if (!displayPart) {
     return internalName || innerId;
@@ -681,7 +703,7 @@ function resolveBootsInlineDisplayName(
   const parts = expanded.split("/");
 
   const internalName = (parts[0] ?? "").trim();
-  let displayPart = (parts[6] ?? "").trim();
+  const displayPart = (parts[6] ?? "").trim();
 
   if (!displayPart) {
     return internalName || innerId;
@@ -709,7 +731,7 @@ function resolveHatsInlineDisplayName(
   const parts = expanded.split("/");
 
   const internalName = (parts[0] ?? "").trim();
-  let displayPart = (parts[5] ?? "").trim();
+  const displayPart = (parts[5] ?? "").trim();
 
   if (!displayPart) {
     return internalName || innerId;
@@ -738,6 +760,9 @@ function buildIncludeTokenMap(
     }
   }
 
+  // Always include modid so LocalTokens can reference it if desired.
+  tokenMap.set("modid", modId);
+
   return tokenMap;
 }
 
@@ -760,10 +785,19 @@ function splitFromFileValue(raw: unknown): string[] {
 }
 
 // -----------------------------------------------------------------------------
-// FIX: Dedupe noisy Include warnings so indexing doesn't flood logs.
+// Include warning/log dedupe
 // -----------------------------------------------------------------------------
 const warnedMissingIncludes = new Set<string>();
 const warnedDeferredIncludes = new Set<string>();
+
+// Debug-level dedupe so "INCLUDE resolved" doesn't appear 500 times even with debug on.
+const debugResolvedIncludes = new Set<string>();
+
+function resetIncludeLogCaches(): void {
+  warnedMissingIncludes.clear();
+  warnedDeferredIncludes.clear();
+  debugResolvedIncludes.clear();
+}
 
 function expandIncludePatches(
   changes: any[],
@@ -773,7 +807,7 @@ function expandIncludePatches(
 ): any[] {
   const expanded: any[] = [];
 
-  console.log(
+  dbg(
     `[InstalledIndex] expandIncludePatches: modId='${modId}', modDir='${modDir}', changes=${
       Array.isArray(changes) ? changes.length : 0
     }`
@@ -790,31 +824,20 @@ function expandIncludePatches(
     const fromFiles = splitFromFileValue((patch as any).FromFile);
 
     if (fromFiles.length === 0) {
-      console.warn(
+      dbg(
         `[InstalledIndex] INCLUDE skipped: empty/invalid FromFile (type=${typeof (patch as any).FromFile})`
       );
       expanded.push(patch);
       continue;
     }
 
-    const tokenMap = buildIncludeTokenMap(
-      modId,
-      dynamicTokens,
-      patch.LocalTokens
-    );
+    const tokenMap = buildIncludeTokenMap(modId, dynamicTokens, patch.LocalTokens);
 
     if (patch.LocalTokens && typeof patch.LocalTokens === "object") {
       const keys = Object.keys(patch.LocalTokens);
-      console.log(
-        `[InstalledIndex] INCLUDE LocalTokens keys: ${keys.join(", ")}`
-      );
-      if (typeof (patch.LocalTokens as any).Color === "string") {
-        console.log(
-          `[InstalledIndex] INCLUDE LocalTokens.Color='${(patch.LocalTokens as any).Color}'`
-        );
-      }
+      dbg(`[InstalledIndex] INCLUDE LocalTokens keys: ${keys.join(", ")}`);
     } else {
-      console.log(`[InstalledIndex] INCLUDE LocalTokens: <none>`);
+      dbg(`[InstalledIndex] INCLUDE LocalTokens: <none>`);
     }
 
     for (const fromFileRaw of fromFiles) {
@@ -832,28 +855,29 @@ function expandIncludePatches(
         const key = `${modId}::${fromFileExpanded}`;
         if (!warnedDeferredIncludes.has(key)) {
           warnedDeferredIncludes.add(key);
-          console.log(
+          dbg(
             `[InstalledIndex] INCLUDE deferred (unresolved tokens): FromFile='${fromFile}' -> '${fromFileExpanded}'`
           );
         }
-        // Keep the include patch itself so future passes/logic still "sees" it,
-        // but don't attempt to expand its content.
         expanded.push(patch);
         continue;
       }
 
       const includeAbs = path.resolve(modDir, fromFileExpanded);
-
       const exists = fs.existsSync(includeAbs);
 
-      console.log(
-        `[InstalledIndex] INCLUDE resolved: FromFile='${fromFileExpanded}' -> '${includeAbs}' (exists=${exists})`
-      );
+      const resolvedKey = `${modId}::${includeAbs}`;
+      if (!debugResolvedIncludes.has(resolvedKey)) {
+        debugResolvedIncludes.add(resolvedKey);
+        dbg(
+          `[InstalledIndex] INCLUDE resolved: FromFile='${fromFileExpanded}' -> '${includeAbs}' (exists=${exists})`
+        );
+      }
 
       if (!exists) {
-        const key = `${modId}::${includeAbs}`;
-        if (!warnedMissingIncludes.has(key)) {
-          warnedMissingIncludes.add(key);
+        const warnKey = `${modId}::${includeAbs}`;
+        if (!warnedMissingIncludes.has(warnKey)) {
+          warnedMissingIncludes.add(warnKey);
           console.warn(
             `[InstalledIndex] INCLUDE missing file: '${includeAbs}' (FromFile='${fromFileExpanded}')`
           );
@@ -871,21 +895,23 @@ function expandIncludePatches(
 
       const includedExpanded = expandTokensInAny(includedJson, tokenMap);
 
-      const expandedTextProbe = JSON.stringify(includedExpanded);
-      const stillHasColorToken = expandedTextProbe.includes("{{Color}}");
-      const stillHasColorTokenLower = expandedTextProbe
-        .toLowerCase()
-        .includes("{{color}}");
+      if (installedIndexDebugEnabled()) {
+        const expandedTextProbe = JSON.stringify(includedExpanded);
+        const stillHasColorToken = expandedTextProbe.includes("{{Color}}");
+        const stillHasColorTokenLower = expandedTextProbe
+          .toLowerCase()
+          .includes("{{color}}");
 
-      console.log(
-        `[InstalledIndex] INCLUDE expanded: stillHas('{{Color}}')=${stillHasColorToken}, stillHas('{{color}}')=${stillHasColorTokenLower}`
-      );
+        dbg(
+          `[InstalledIndex] INCLUDE expanded: stillHas('{{Color}}')=${stillHasColorToken}, stillHas('{{color}}')=${stillHasColorTokenLower}`
+        );
+      }
 
       const includedChanges = Array.isArray((includedExpanded as any).Changes)
         ? (includedExpanded as any).Changes
         : [];
 
-      console.log(
+      dbg(
         `[InstalledIndex] INCLUDE expanded changes count: ${includedChanges.length}`
       );
 
@@ -902,9 +928,7 @@ function expandIncludePatches(
     }
   }
 
-  console.log(
-    `[InstalledIndex] expandIncludePatches result: expanded=${expanded.length}`
-  );
+  dbg(`[InstalledIndex] expandIncludePatches result: expanded=${expanded.length}`);
 
   return expanded;
 }
@@ -964,18 +988,11 @@ function collectQualifiedIdsFromAny(
   return set;
 }
 
-function shouldSkipDirectIndexingAsTemplate(
-  filePath: string,
-  json: any
-): boolean {
+function shouldSkipDirectIndexingAsTemplate(filePath: string, json: any): boolean {
   const base = path.basename(filePath).toLowerCase();
 
   if (base.includes("template")) {
-    if (
-      json &&
-      typeof json === "object" &&
-      Array.isArray((json as any).Changes)
-    ) {
+    if (json && typeof json === "object" && Array.isArray((json as any).Changes)) {
       return true;
     }
   }
@@ -1045,20 +1062,15 @@ function scanContentJson(
 
   const hasInclude =
     hasChanges &&
-    (json as any).Changes.some(
-      (p: any) =>
-        p &&
-        typeof p === "object" &&
-        p.Action === "Include" &&
-        typeof p.FromFile === "string"
-    );
+    (json as any).Changes.some((p: any) => {
+      if (!p || typeof p !== "object") return false;
+      if (p.Action !== "Include") return false;
+      // FromFile can be string or array; allow both
+      return typeof p.FromFile === "string" || Array.isArray(p.FromFile);
+    });
 
-  if (
-    hasInclude ||
-    rel.endsWith("Data/objects.json") ||
-    rel.endsWith("Data/objects.jsonc")
-  ) {
-    console.log(
+  if (installedIndexDebugEnabled() && (hasInclude || rel.toLowerCase().includes("data/objects."))) {
+    dbg(
       `[InstalledIndex] SCAN file='${rel}' modId='${modId}' hasChanges=${hasChanges} changesCount=${
         hasChanges ? (json as any).Changes.length : 0
       } hasInclude=${hasInclude}`
@@ -1066,12 +1078,13 @@ function scanContentJson(
   }
 
   if (shouldSkipDirectIndexingAsTemplate(filePath, json)) {
-    if (hasInclude || rel.toLowerCase().includes("template")) {
-      console.log(`[InstalledIndex] SKIP template direct indexing: '${rel}'`);
+    if (installedIndexDebugEnabled() && (hasInclude || rel.toLowerCase().includes("template"))) {
+      dbg(`[InstalledIndex] SKIP template direct indexing: '${rel}'`);
     }
     return;
   }
 
+  // Merge mod-level dynamic tokens + file-level DynamicTokens
   const dynamicTokens = new Map<string, string>();
   if (modDynamicTokens) {
     for (const [k, v] of modDynamicTokens.entries()) {
@@ -1099,14 +1112,9 @@ function scanContentJson(
 
   const changes = expandIncludePatches(changesRaw, modDir, modId, dynamicTokens);
 
-  if (
-    hasInclude ||
-    rel.endsWith("Data/objects.json") ||
-    rel.endsWith("Data/objects.jsonc")
-  ) {
-    const includeCount = changesRaw.filter((p: any) => p?.Action === "Include")
-      .length;
-    console.log(
+  if (installedIndexDebugEnabled() && (hasInclude || rel.toLowerCase().includes("data/objects."))) {
+    const includeCount = changesRaw.filter((p: any) => p?.Action === "Include").length;
+    dbg(
       `[InstalledIndex] SCAN expanded changes: raw=${changesRaw.length} includes=${includeCount} expanded=${changes.length}`
     );
   }
@@ -1175,7 +1183,7 @@ function scanContentJson(
       const qualifiedId = `(${targetInfo.prefix})${innerId}`;
 
       if (qualifiedId.includes("{{") || qualifiedId.includes("}}")) {
-        console.warn(
+        dbg(
           `[InstalledIndex] INDEX token still present: ${qualifiedId} (from file ${path
             .relative(modDir, filePath)
             .replace(/\\/g, "/")})`
@@ -1193,10 +1201,7 @@ function scanContentJson(
           modId,
           dynamicTokens
         );
-      } else if (
-        patch.Target === "Data/Boots" &&
-        typeof entryData === "string"
-      ) {
+      } else if (patch.Target === "Data/Boots" && typeof entryData === "string") {
         displayName = resolveBootsInlineDisplayName(
           entryData,
           innerId,
@@ -1204,10 +1209,7 @@ function scanContentJson(
           modId,
           dynamicTokens
         );
-      } else if (
-        patch.Target === "Data/Hats" &&
-        typeof entryData === "string"
-      ) {
+      } else if (patch.Target === "Data/Hats" && typeof entryData === "string") {
         displayName = resolveHatsInlineDisplayName(
           entryData,
           innerId,
@@ -1288,7 +1290,7 @@ function scanModFolder(
   const modId = identity.modId;
   const modName = identity.modName;
 
-  console.log(
+  dbg(
     `[Stardew Modding Schema] Mod folder '${folderName}' → modId='${modId}', modName='${modName}'`
   );
 
@@ -1375,7 +1377,7 @@ function findModFolders(modsRoot: string): string[] {
 }
 
 // -----------------------------------------------------------------------------
-// NEW: Only write installed-mod-ids.json when it actually changed.
+// Only write installed-mod-ids.json when it actually changed.
 // -----------------------------------------------------------------------------
 function stableStringify(value: any): string {
   const seen = new WeakSet<object>();
@@ -1453,6 +1455,9 @@ async function doRebuildInstalledItemIndex(
   auto: boolean,
   progress?: vscode.Progress<{ message?: string; increment?: number }>
 ): Promise<void> {
+  // Clear per-run caches to avoid memory growth and to keep logging sane
+  resetIncludeLogCaches();
+
   const config = vscode.workspace.getConfiguration("stardewModdingSchema");
   const modsRoot = (config.get<string>("modsRoot") ?? "").trim();
 
@@ -1486,13 +1491,15 @@ async function doRebuildInstalledItemIndex(
   const modDirs = findModFolders(modsRoot);
 
   const knownMods = buildKnownModsMap(modDirs);
-  console.log(
-    `[Stardew Modding Schema] Known mods loaded: ${knownMods.size}`
-  );
+  dbg(`[Stardew Modding Schema] Known mods loaded: ${knownMods.size}`);
 
   if (!auto) {
     vscode.window.showInformationMessage(
       `Stardew Modding Schema: Detected ${modDirs.length} mod folders.`
+    );
+  } else {
+    dbg(
+      `[Stardew Modding Schema] Auto rebuild scanning ${modDirs.length} mod folders.`
     );
   }
 
@@ -1577,9 +1584,7 @@ async function doRebuildInstalledItemIndex(
   }
 
   for (const arr of Object.values(categories)) {
-    arr.sort((a, b) =>
-      String(a.qualifiedId).localeCompare(String(b.qualifiedId))
-    );
+    arr.sort((a, b) => String(a.qualifiedId).localeCompare(String(b.qualifiedId)));
   }
 
   const out = {
@@ -1627,7 +1632,7 @@ async function doRebuildInstalledItemIndex(
     if (changed) {
       console.log("[Stardew Modding Schema] Installed mod index updated.");
     } else {
-      console.log("[Stardew Modding Schema] Installed mod index unchanged.");
+      dbg("[Stardew Modding Schema] Installed mod index unchanged.");
     }
   }
 }
@@ -1643,6 +1648,15 @@ export async function rebuildInstalledItemIndex(
   const auto = options?.auto ?? false;
 
   if (auto) {
+    const now = Date.now();
+    if (now - lastAutoRebuildAt < AUTO_REBUILD_MIN_MS) {
+      dbg(
+        `[Stardew Modding Schema] Auto rebuild throttled (min ${AUTO_REBUILD_MIN_MS}ms).`
+      );
+      return;
+    }
+    lastAutoRebuildAt = now;
+
     await runRebuildGuarded(context, true);
     return;
   }
