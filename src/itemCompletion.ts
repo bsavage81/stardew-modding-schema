@@ -13,6 +13,14 @@ function findEnclosingProperty(node: JsonNode | undefined): JsonNode | undefined
   return cur;
 }
 
+function getPropertyKeyName(propNode: JsonNode | undefined): string | undefined {
+  if (!propNode || propNode.type !== "property" || !propNode.children || propNode.children.length < 2)
+    return;
+  const keyNode = propNode.children[0];
+  if (!keyNode || keyNode.type !== "string") return;
+  return String(keyNode.value);
+}
+
 /**
  * Given the raw string content and an index inside it, return the boundaries
  * of the "word" token under the cursor.
@@ -32,6 +40,60 @@ function getTokenRangeInString(str: string, index: number): { start: number; end
   while (end < str.length && !isDelim(str[end])) end++;
 
   return { start, end };
+}
+
+function isOffsetInsideJsonString(node: JsonNode, offset: number): boolean {
+  // jsonc-parser string node length includes the quotes
+  const stringStartOffset = node.offset + 1;
+  const stringEndOffset = node.offset + node.length - 1;
+  return offset >= stringStartOffset && offset <= stringEndOffset;
+}
+
+function getStringReplaceRangeForToken(
+  document: vscode.TextDocument,
+  stringNode: JsonNode,
+  offset: number
+): { tokenTrimmed: string; replaceRange: vscode.Range } | undefined {
+  if (stringNode.type !== "string") return;
+  if (!isOffsetInsideJsonString(stringNode, offset)) return;
+
+  const fullValue = (stringNode.value ?? "") as string;
+
+  const stringStartOffset = stringNode.offset + 1;
+  const innerIndex = Math.max(0, Math.min(fullValue.length, offset - stringStartOffset));
+
+  const { start: tokenStart, end: tokenEnd } = getTokenRangeInString(fullValue, innerIndex);
+  const tokenText = fullValue.substring(tokenStart, tokenEnd);
+  const tokenTrimmed = tokenText.trim();
+
+  const tokenStartAbs = stringStartOffset + tokenStart;
+  const tokenEndAbs = stringStartOffset + tokenEnd;
+
+  const replaceRange = new vscode.Range(
+    document.positionAt(tokenStartAbs),
+    document.positionAt(tokenEndAbs)
+  );
+
+  return { tokenTrimmed, replaceRange };
+}
+
+/**
+ * For Unlockable Bundles-style maps where item IDs are OBJECT KEYS:
+ *  "Price": { "(O)388": 200, "Money": 2500 }
+ *  "BundleReward": { "(H)40": 1 }
+ */
+function getUbMapNameForProperty(propNode: JsonNode | undefined): string | undefined {
+  // propNode is the leaf "(O)388": 200
+  // parent chain: property -> object -> property ("Price") -> object/...
+  if (!propNode || propNode.type !== "property") return;
+
+  const objNode = propNode.parent as JsonNode | undefined;
+  if (!objNode || objNode.type !== "object") return;
+
+  const containerProp = objNode.parent as JsonNode | undefined;
+  if (!containerProp || containerProp.type !== "property") return;
+
+  return getPropertyKeyName(containerProp);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -74,6 +136,12 @@ export function registerItemCompletionSupport(
     ...Array.from("ABCDEFGHIJKLMNOPQRSTUVWXYZ"),
   ];
 
+  const UB_ITEM_KEY_MAPS = new Set<string>([
+    "Price",
+    "BundleReward",
+    // Add more UB fields here if you want the same behavior elsewhere.
+  ]);
+
   const provider = vscode.languages.registerCompletionItemProvider(
     selector,
     {
@@ -103,48 +171,56 @@ export function registerItemCompletionSupport(
         const valueNode = propNode.children[1];
 
         if (keyNode.type !== "string") return;
-        if (valueNode.type !== "string") return;
 
-        const keyName = String(keyNode.value);
+        // ---------------------------------------------------------------------
+        // PATH 1 (existing): ItemId/Name/Id values are strings
+        // ---------------------------------------------------------------------
+        if (valueNode.type === "string") {
+          const keyName = String(keyNode.value);
 
-        // Keep existing behavior: only run for these ID-ish keys
-        const isIdKey = keyName === "ItemId" || keyName === "Name" || keyName === "Id";
-        if (!isIdKey) return;
+          // Keep existing behavior: only run for these ID-ish keys
+          const isIdKey = keyName === "ItemId" || keyName === "Name" || keyName === "Id";
+          if (!isIdKey) return;
 
-        // Only operate when cursor is inside the string quotes.
-        const stringStartOffset = valueNode.offset + 1;
-        const stringEndOffset = valueNode.offset + valueNode.length - 1;
-        if (offset < stringStartOffset || offset > stringEndOffset) return;
+          const tokenInfo = getStringReplaceRangeForToken(document, valueNode, offset);
+          if (!tokenInfo) return;
 
-        const fullValue = (valueNode.value ?? "") as string;
+          return buildItemIdCompletionsForToken({
+            lookups,
+            state: sharedState,
+            tokenTrimmed: tokenInfo.tokenTrimmed,
+            replaceRange: tokenInfo.replaceRange,
+            document,
+            valueNodeOffset: valueNode.offset,
+            valueNodeLength: valueNode.length,
+            triggerSuggestCmd,
+          });
+        }
 
-        const innerIndex = Math.max(
-          0,
-          Math.min(fullValue.length, offset - stringStartOffset)
-        );
+        // ---------------------------------------------------------------------
+        // PATH 2 (new): UB maps where the ITEM ID is the PROPERTY KEY string
+        // Example: "Price": { "(O)388": 200, "Money": 2500 }
+        // We trigger when cursor is inside the KEY string.
+        // ---------------------------------------------------------------------
+        const ubMapName = getUbMapNameForProperty(propNode);
+        if (!ubMapName || !UB_ITEM_KEY_MAPS.has(ubMapName)) return;
 
-        const { start: tokenStart, end: tokenEnd } = getTokenRangeInString(fullValue, innerIndex);
+        // Don’t offer item completions for non-item keys in these maps
+        const thisKey = String(keyNode.value);
+        if (!thisKey) return;
+        if (thisKey === "Money") return;
 
-        const tokenText = fullValue.substring(tokenStart, tokenEnd);
-        const tokenTrimmed = tokenText.trim();
+        const keyTokenInfo = getStringReplaceRangeForToken(document, keyNode, offset);
+        if (!keyTokenInfo) return;
 
-        const tokenStartAbs = stringStartOffset + tokenStart;
-        const tokenEndAbs = stringStartOffset + tokenEnd;
-
-        const replaceRange = new vscode.Range(
-          document.positionAt(tokenStartAbs),
-          document.positionAt(tokenEndAbs)
-        );
-
-        // Delegate Stage A/B/C to the shared builder
         return buildItemIdCompletionsForToken({
           lookups,
           state: sharedState,
-          tokenTrimmed,
-          replaceRange,
+          tokenTrimmed: keyTokenInfo.tokenTrimmed,
+          replaceRange: keyTokenInfo.replaceRange,
           document,
-          valueNodeOffset: valueNode.offset,
-          valueNodeLength: valueNode.length,
+          valueNodeOffset: keyNode.offset, // we're replacing the KEY string node now
+          valueNodeLength: keyNode.length,
           triggerSuggestCmd,
         });
       },
