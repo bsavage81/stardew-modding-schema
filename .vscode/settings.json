@@ -14,7 +14,7 @@
 			"fileMatch": [
 				"**/Stardrop Installed Mods/**/*.json"
 			],
-			"url": "file:///c%3A/Users/beauj/.vscode/extensions/bsavage81.stardew-modding-schema-1.3.0/schemas/stardew-content.schema.json",
+			"url": "file:///c%3A/Users/beauj/.vscode/extensions/bsavage81.stardew-modding-schema-1.3.2/schemas/stardew-content.schema.json",
 			"schemaId": "stardewModdingSchema.modsRootSchema"
 		}
 	]
