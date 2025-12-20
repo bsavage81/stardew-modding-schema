@@ -9,7 +9,7 @@ This extension helps mod authors avoid mistakes, improve performance, and build 
 
 ## Features
 
-### ✔ Smart Schema Selection (NEW in 1.2.x)
+### ✔ Smart Schema Selection (NEW in 1.3.x)
 
 This extension uses a **meta-schema system** that automatically applies the correct schema based on what your `content.json` contains.
 
