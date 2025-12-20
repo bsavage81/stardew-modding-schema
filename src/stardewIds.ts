@@ -1,246 +1,164 @@
+// src/stardewIds.ts
+import * as vscode from "vscode";
 import * as fs from "fs";
 import * as path from "path";
-import * as vscode from "vscode";
-import { JSONSchema } from "vscode-json-languageservice";
-import { parse as parseJsonC, ParseError } from "jsonc-parser";
+import * as jsonc from "jsonc-parser";
 
-export type CategoryName =
-  | "objects"
-  | "bigCraftables"
-  | "boots"
-  | "flooring"
-  | "furniture"
-  | "hats"
-  | "mannequins"
-  | "pants"
-  | "shirts"
-  | "tools"
-  | "trinkets"
-  | "wallpapers"
-  | "weapons";
+export type ItemSource = "vanilla" | "custom" | "installed";
 
-export interface StardewItemEntry {
-  id: number | string;
+export interface ItemEntry {
+  id: string;
   name: string;
-  qualifiedId: string; // e.g. "(O)24"
+  qualifiedId: string;
+  category: string;
+  source: ItemSource;
+  modId: string; // "Vanilla", "Custom", or actual manifest UniqueID for installed items
 }
 
-export interface StardewIdsRoot {
-  categoryTypes?: Record<CategoryName, string>;
-  objects?: StardewItemEntry[];
-  bigCraftables?: StardewItemEntry[];
-  boots?: StardewItemEntry[];
-  flooring?: StardewItemEntry[];
-  furniture?: StardewItemEntry[];
-  hats?: StardewItemEntry[];
-  mannequins?: StardewItemEntry[];
-  pants?: StardewItemEntry[];
-  shirts?: StardewItemEntry[];
-  tools?: StardewItemEntry[];
-  trinkets?: StardewItemEntry[];
-  wallpapers?: StardewItemEntry[];
-  weapons?: StardewItemEntry[];
-}
-
-export interface StardewItemLookups {
-  raw: StardewIdsRoot;
-  byQualifiedId: Map<
-    string,
-    StardewItemEntry & { category: CategoryName; source: "vanilla" | "custom" }
-  >;
+export interface ItemLookup {
+  byQualifiedId: Map<string, ItemEntry>;
+  byId: Map<string, ItemEntry[]>;
+  byName: Map<string, ItemEntry[]>; // NEW: lookup by display name (lowercased)
 }
 
 /**
- * Try to load and parse a JSON/JSONC file.
- * Allows comments and trailing commas.
+ * Try loading data/<baseName>.jsonc or data/<baseName>.json,
+ * parsed as JSONC (so comments and trailing commas are OK).
  */
-function tryLoadJsonC(filePath: string): any | null {
-  try {
-    if (!fs.existsSync(filePath)) {
+function loadDataFile(
+  context: vscode.ExtensionContext,
+  baseName: string
+): any | null {
+  const candidates = [`${baseName}.jsonc`, `${baseName}.json`];
+
+  for (const fileName of candidates) {
+    const fullPath = context.asAbsolutePath(path.join("data", fileName));
+    if (!fs.existsSync(fullPath)) {
+      continue;
+    }
+
+    try {
+      const text = fs.readFileSync(fullPath, "utf8");
+      const errors: jsonc.ParseError[] = [];
+      const json = jsonc.parse(text, errors, { allowTrailingComma: true });
+      if (json && typeof json === "object") {
+        return json;
+      }
+    } catch (err) {
+      console.warn(
+        `[Stardew Modding Schema] Failed to parse ${fileName}:`,
+        err
+      );
       return null;
     }
+  }
 
-    const text = fs.readFileSync(filePath, "utf8");
-    const errors: ParseError[] = [];
-    const json = parseJsonC(text, errors, { allowTrailingComma: true });
+  return null;
+}
 
-    if (errors.length > 0) {
-      console.warn(
-        "[Stardew Modding Schema] JSONC parse warnings for:",
-        filePath,
-        errors
-      );
+/**
+ * Add items from a stardew-ids-style JSON into the lookup maps.
+ * Respects categoryTypes, and will attach modId if present on each entry.
+ */
+function addItemsFromSource(
+  json: any,
+  source: ItemSource,
+  defaultModId: string,
+  lookup: ItemLookup
+): void {
+  if (!json || typeof json !== "object") return;
+
+  const categoryTypes = json.categoryTypes as Record<string, string> | undefined;
+  if (!categoryTypes || typeof categoryTypes !== "object") return;
+
+  // For each category key (objects, bigCraftables, weapons, etc.)
+  for (const categoryKey of Object.keys(categoryTypes)) {
+    const prefix = categoryTypes[categoryKey]; // e.g. "O", "BC", "W"
+    if (!prefix) continue;
+
+    const itemsArray = json[categoryKey];
+    if (!Array.isArray(itemsArray)) continue;
+
+    for (const item of itemsArray) {
+      if (!item || typeof item !== "object") continue;
+
+      const idRaw = item.id;
+      const name = String(item.name ?? "").trim();
+      const qualifiedId = String(item.qualifiedId ?? "").trim();
+
+      if (!name || !qualifiedId || idRaw === undefined || idRaw === null) {
+        continue;
+      }
+
+      const id = String(idRaw);
+      const modId =
+        typeof item.modId === "string" && item.modId.trim().length > 0
+          ? item.modId.trim()
+          : defaultModId;
+
+      const entry: ItemEntry = {
+        id,
+        name,
+        qualifiedId,
+        category: categoryKey,
+        source,
+        modId,
+      };
+
+      // byQualifiedId: last one wins (installed/custom can override vanilla)
+      lookup.byQualifiedId.set(qualifiedId, entry);
+
+      // byId: collect all entries matching this bare ID
+      const list = lookup.byId.get(id) ?? [];
+      list.push(entry);
+      lookup.byId.set(id, list);
+
+      // byName: lookup by display name (case-insensitive)
+      const nameKey = name.toLowerCase();
+      const nameList = lookup.byName.get(nameKey) ?? [];
+      nameList.push(entry);
+      lookup.byName.set(nameKey, nameList);
     }
-
-    return json;
-  } catch (err) {
-    console.warn(
-      "[Stardew Modding Schema] Failed to parse JSONC:",
-      filePath,
-      err
-    );
-    return null;
   }
 }
 
 /**
- * Load vanilla + custom ID data and merge them.
- *
- * Vanilla:
- *   data/stardew-ids.jsonc  or  data/stardew-ids.json
- *
- * Custom (optional):
- *   data/custom-ids.jsonc   or  data/custom-ids.json
+ * Load vanilla, custom, and installed item IDs into lookup maps.
  */
 export function loadStardewIds(
   context: vscode.ExtensionContext
-): StardewItemLookups | null {
-  const coreCandidates = [
-    context.asAbsolutePath(path.join("data", "stardew-ids.jsonc")),
-    context.asAbsolutePath(path.join("data", "stardew-ids.json"))
-  ];
+): ItemLookup | null {
+  const lookup: ItemLookup = {
+    byQualifiedId: new Map<string, ItemEntry>(),
+    byId: new Map<string, ItemEntry[]>(),
+    byName: new Map<string, ItemEntry[]>(),
+  };
 
-  let coreRaw: StardewIdsRoot | null = null;
-  let corePathUsed: string | null = null;
-
-  for (const candidate of coreCandidates) {
-    const json = tryLoadJsonC(candidate);
-    if (json) {
-      coreRaw = json as StardewIdsRoot;
-      corePathUsed = candidate;
-      break;
-    }
-  }
-
-  if (!coreRaw) {
+  // 1) Vanilla
+  const vanillaJson = loadDataFile(context, "stardew-ids");
+  if (!vanillaJson) {
     console.warn(
-      "[Stardew Modding Schema] stardew-ids.json(c) not found or invalid. Expected one of:",
-      coreCandidates
+      "[Stardew Modding Schema] data/stardew-ids.json(.jsonc) not found; item features disabled."
     );
     return null;
   }
+  addItemsFromSource(vanillaJson, "vanilla", "Vanilla", lookup);
 
-  const customCandidates = [
-    context.asAbsolutePath(path.join("data", "custom-ids.jsonc")),
-    context.asAbsolutePath(path.join("data", "custom-ids.json"))
-  ];
-
-  let customRaw: StardewIdsRoot | null = null;
-  let customPathUsed: string | null = null;
-
-  for (const candidate of customCandidates) {
-    const json = tryLoadJsonC(candidate);
-    if (json) {
-      customRaw = json as StardewIdsRoot;
-      customPathUsed = candidate;
-      break;
-    }
+  // 2) Custom IDs (optional)
+  const customJson = loadDataFile(context, "custom-ids");
+  if (customJson) {
+    addItemsFromSource(customJson, "custom", "Custom", lookup);
   }
 
-  if (corePathUsed) {
-    console.log(
-      "[Stardew Modding Schema] Loaded vanilla IDs from:",
-      corePathUsed
-    );
-  }
-  if (customPathUsed) {
-    console.log(
-      "[Stardew Modding Schema] Loaded custom IDs from:",
-      customPathUsed
-    );
-  }
-
-  const byQualifiedId = new Map<
-    string,
-    StardewItemEntry & { category: CategoryName; source: "vanilla" | "custom" }
-  >();
-
-  const categories: CategoryName[] = [
-    "objects",
-    "bigCraftables",
-    "boots",
-    "flooring",
-    "furniture",
-    "hats",
-    "mannequins",
-    "pants",
-    "shirts",
-    "tools",
-    "trinkets",
-    "wallpapers",
-    "weapons"
-  ];
-
-  function ingest(root: StardewIdsRoot, source: "vanilla" | "custom") {
-    for (const category of categories) {
-      const list = (root as any)[category] as StardewItemEntry[] | undefined;
-      if (!list) continue;
-
-      for (const entry of list) {
-        if (!entry || !entry.qualifiedId || !entry.name) continue;
-
-        const wrapped = { ...entry, category, source };
-        // custom overrides vanilla on the same qualifiedId
-        byQualifiedId.set(entry.qualifiedId, wrapped);
-      }
-    }
-  }
-
-  ingest(coreRaw, "vanilla");
-  if (customRaw) {
-    ingest(customRaw, "custom");
+  // 3) Installed mod IDs (optional; built from Mods folder)
+  const installedJson = loadDataFile(context, "installed-mod-ids");
+  if (installedJson) {
+    addItemsFromSource(installedJson, "installed", "Installed", lookup);
   }
 
   console.log(
-    `[Stardew Modding Schema] Total unique qualified IDs loaded: ${byQualifiedId.size}`
+    `[Stardew Modding Schema] Loaded ${lookup.byQualifiedId.size} item entries (vanilla + custom + installed).`
   );
 
-  return {
-    raw: coreRaw,
-    byQualifiedId
-  };
-}
-
-/**
- * Build a runtime JSONSchema for item IDs from loaded lookups.
- * This is used only inside the language service for hover/completion.
- */
-export function buildStardewItemIdSchema(
-  lookups: StardewItemLookups | null
-): JSONSchema {
-  if (!lookups) {
-    return {
-      type: "string",
-      description: "Stardew item ID or item query string."
-    };
-  }
-
-  const enumValues: string[] = [];
-  const enumDescriptions: string[] = [];
-
-  for (const entry of lookups.byQualifiedId.values()) {
-    enumValues.push(entry.qualifiedId);
-    enumDescriptions.push(
-      `${entry.name} (${entry.category}${
-        entry.source === "custom" ? ", custom" : ""
-      })`
-    );
-  }
-
-  return {
-    description:
-      "Qualified item IDs like '(O)24', '(BC)16', '(W)7'. Includes vanilla + custom IDs at runtime.",
-    anyOf: [
-      {
-        type: "string",
-        enum: enumValues,
-        enumDescriptions
-      },
-      {
-        type: "string",
-        description:
-          "Any item ID or item query string (for JA items, flavored items, etc.)."
-      }
-    ]
-  };
+  return lookup;
 }

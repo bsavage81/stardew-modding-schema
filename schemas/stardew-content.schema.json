@@ -6,80 +6,190 @@
       "if": {
         "type": "object",
         "properties": {
-          "Furniture": {}
+          "UniqueID": { "type": "string" },
+          "Name": { "type": "string" }
         },
-        "required": ["Furniture"]
+        "required": ["UniqueID", "Name"]
       },
-      "then": {
-        "$ref": "https://raw.githubusercontent.com/Leroymilo/FurnitureFramework/main/doc/schemas/content.json"
-      },
+      "then": { "$ref": "https://smapi.io/schemas/manifest.json" },
       "else": {
-        "allOf": [
-          {
-            "$ref": "https://smapi.io/schemas/content-patcher.json"
-          },
-          {
-            "properties": {
-              "Changes": {
-                "type": "array",
-                "items": {
-                  "type": "object",
-                  "allOf": [
-                    {
-                      "if": {
-                        "properties": {
-                          "Action": { "const": "EditData" },
-                          "Target": {
-                            "enum": [
-                              "UnlockableBundles/Bundles",
-                              "UnlockableBundles/AdvancedPricing",
-                              "UnlockableBundles/WalletCurrencies",
-                              "UnlockableBundles/PrizeTicketMachines",
-                              "UnlockableBundles/BundleThemes",
-                              "UnlockableBundles/CompletionRibbons"
-                            ]
-                          }
+        "if": {
+          "type": "object",
+          "properties": { "Furniture": {} },
+          "required": ["Furniture"]
+        },
+        "then": {
+          "$ref": "https://raw.githubusercontent.com/Leroymilo/FurnitureFramework/main/doc/schemas/content.json"
+        },
+        "else": {
+          "allOf": [
+            { "$ref": "https://smapi.io/schemas/content-patcher.json" },
+            {
+              "type": "object",
+              "properties": {
+                "Changes": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "allOf": [
+                      {
+                        "if": {
+                          "properties": {
+                            "Action": { "const": "EditData" },
+                            "Target": { "const": "UnlockableBundles/Bundles" }
+                          },
+                          "required": ["Action", "Target"]
                         },
-                        "required": ["Action", "Target"]
+                        "then": {
+                          "properties": {
+                            "Entries": {
+                              "type": "object",
+                              "description": "UnlockableBundles/Bundles asset. Keys are bundle IDs.",
+                              "additionalProperties": {
+                                "$ref": "./unlockable-bundles.schema.json#/$defs/unlockableBundle"
+                              }
+                            }
+                          }
+                        }
                       },
-                      "then": {
-                        "properties": {
-                          "Entries": {
-                            "type": "object",
-                            "additionalProperties": {
-                              "$ref": "./unlockable-bundles.schema.json"
+                      {
+                        "if": {
+                          "properties": {
+                            "Action": { "const": "EditData" },
+                            "Target": {
+                              "const": "UnlockableBundles/AdvancedPricing"
+                            }
+                          },
+                          "required": ["Action", "Target"]
+                        },
+                        "then": {
+                          "properties": {
+                            "Entries": {
+                              "type": "object",
+                              "description": "UnlockableBundles/AdvancedPricing asset. Keys are AdvancedPricing IDs.",
+                              "additionalProperties": {
+                                "$ref": "./unlockable-bundles.schema.json#/$defs/advancedPricingItem"
+                              }
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "if": {
+                          "properties": {
+                            "Action": { "const": "EditData" },
+                            "Target": {
+                              "const": "UnlockableBundles/WalletCurrencies"
+                            }
+                          },
+                          "required": ["Action", "Target"]
+                        },
+                        "then": {
+                          "properties": {
+                            "Entries": {
+                              "type": "object",
+                              "description": "UnlockableBundles/WalletCurrencies asset. Keys are currency IDs.",
+                              "additionalProperties": {
+                                "$ref": "./unlockable-bundles.schema.json#/$defs/walletCurrency"
+                              }
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "if": {
+                          "properties": {
+                            "Action": { "const": "EditData" },
+                            "Target": {
+                              "const": "UnlockableBundles/PrizeTicketMachines"
+                            }
+                          },
+                          "required": ["Action", "Target"]
+                        },
+                        "then": {
+                          "properties": {
+                            "Entries": {
+                              "type": "object",
+                              "description": "UnlockableBundles/PrizeTicketMachines asset. Keys are prize machine IDs.",
+                              "additionalProperties": {
+                                "$ref": "./unlockable-bundles.schema.json#/$defs/prizeTicketMachine"
+                              }
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "if": {
+                          "properties": {
+                            "Action": { "const": "EditData" },
+                            "Target": {
+                              "const": "UnlockableBundles/CompletionRibbons"
+                            }
+                          },
+                          "required": ["Action", "Target"]
+                        },
+                        "then": {
+                          "properties": {
+                            "Entries": {
+                              "type": "object",
+                              "description": "UnlockableBundles/CompletionRibbons asset. Keys are ribbon IDs.",
+                              "additionalProperties": {
+                                "$ref": "./unlockable-bundles.schema.json#/$defs/UbCompletionRibbon"
+                              }
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "if": {
+                          "properties": {
+                            "Action": { "const": "EditData" },
+                            "Target": {
+                              "const": "UnlockableBundles/BundleThemes"
+                            }
+                          },
+                          "required": ["Action", "Target"]
+                        },
+                        "then": {
+                          "properties": {
+                            "Entries": {
+                              "type": "object",
+                              "description": "UnlockableBundles/BundleThemes asset. Keys are BundleTheme IDs.",
+                              "additionalProperties": {
+                                "type": "object"
+                              }
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "if": {
+                          "properties": {
+                            "Action": { "const": "EditData" },
+                            "Target": {
+                              "const": "mushymato.MonsterVariety/Data"
+                            }
+                          },
+                          "required": ["Action", "Target"]
+                        },
+                        "then": {
+                          "properties": {
+                            "Entries": {
+                              "type": "object",
+                              "additionalProperties": {
+                                "$ref": "./monster-variety.schema.json"
+                              }
                             }
                           }
                         }
                       }
-                    },
-                    {
-                      "if": {
-                        "properties": {
-                          "Action": { "const": "EditData" },
-                          "Target": {
-                            "const": "mushymato.MonsterVariety/Data"
-                          }
-                        },
-                        "required": ["Action", "Target"]
-                      },
-                      "then": {
-                        "properties": {
-                          "Entries": {
-                            "type": "object",
-                            "additionalProperties": {
-                              "$ref": "./monster-variety.schema.json"
-                            }
-                          }
-                        }
-                      }
-                    }
-                  ]
+                    ]
+                  }
                 }
               }
             }
-          }
-        ]
+          ]
+        }
       }
     }
   ]

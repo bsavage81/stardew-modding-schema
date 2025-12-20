@@ -1,7 +1,7 @@
 {
   "name": "stardew-modding-schema",
   "displayName": "Stardew Modding Schema",
-  "description": "Adds schema validation for Content Patcher, Unlockable Bundles, Furniture Framework, Monster Variety, and Fashion Sense.",
+  "description": "Adds schema validation for Content Patcher, Unlockable Bundles, Furniture Framework.",
   "version": "1.3.0",
   "publisher": "BSavage81",
   "engines": {
@@ -31,15 +31,20 @@
   ],
   "contributes": {
     "configuration": {
-      "title": "Stardew Modding Schema",
       "properties": {
-        "stardewModdingSchema.unlockableBundles.shopTypesPath": {
+        "stardewModdingSchema.modsRoot": {
           "type": "string",
           "default": "",
-          "description": "Absolute path to Unlockable Bundles ShopTypes.json (usually .../Mods/Unlockable Bundles/assets/Data/ShopTypes.json). Used for ShopType completions."
+          "description": "Absolute path to your Stardew Valley Mods folder. Used to discover installed mod item IDs for hover/completion."
         }
       }
     },
+    "commands": [
+      {
+        "command": "stardewModdingSchema.rebuildInstalledItemIndex",
+        "title": "Stardew Modding Schema: Rebuild Installed Item Index"
+      }
+    ],
     "languages": [
       {
         "id": "json",
@@ -55,75 +60,17 @@
     "jsonValidation": [
       {
         "fileMatch": [
-          "**/content.json"
-        ],
-        "url": "./schemas/stardew-content.schema.json"
-      },
-      {
-        "fileMatch": [
-          "**/{data,Data}/**/*.json"
-        ],
-        "url": "./schemas/stardew-content.schema.json"
-      },
-      {
-        "fileMatch": [
-          "**/manifest.json"
-        ],
-        "url": "https://smapi.io/schemas/manifest.json"
-      },
-      {
-        "fileMatch": [
-          "**/i18n/*.json"
+          "{{modsRoot}}/**/i18n/*.json",
+          "{{modsRoot}}/**/i18n/*/*.json",
+          "{{modsRoot}}/**/i18n/*/**/*.json"
         ],
         "url": "https://smapi.io/schemas/i18n.json"
       },
       {
         "fileMatch": [
-          "**/hair.json"
+          "{{modsRoot}}/**/*.json"
         ],
-        "url": "./schemas/fashion-sense/fashion-sense.hair.schema.json"
-      },
-      {
-        "fileMatch": [
-          "**/hat.json"
-        ],
-        "url": "./schemas/fashion-sense/fashion-sense.hat.schema.json"
-      },
-      {
-        "fileMatch": [
-          "**/shirt.json"
-        ],
-        "url": "./schemas/fashion-sense/fashion-sense.shirt.schema.json"
-      },
-      {
-        "fileMatch": [
-          "**/sleeves.json"
-        ],
-        "url": "./schemas/fashion-sense/fashion-sense.sleeves.schema.json"
-      },
-      {
-        "fileMatch": [
-          "**/pants.json"
-        ],
-        "url": "./schemas/fashion-sense/fashion-sense.pants.schema.json"
-      },
-      {
-        "fileMatch": [
-          "**/shoes.json"
-        ],
-        "url": "./schemas/fashion-sense/fashion-sense.shoes.schema.json"
-      },
-      {
-        "fileMatch": [
-          "**/accessory.json"
-        ],
-        "url": "./schemas/fashion-sense/fashion-sense.accessory.schema.json"
-      },
-      {
-        "fileMatch": [
-          "**/body.json"
-        ],
-        "url": "./schemas/fashion-sense/fashion-sense.body.schema.json"
+        "url": "./schemas/stardew-content.schema.json"
       }
     ]
   },

@@ -16,6 +16,11 @@
   },
   "objects": [
     {
+      "id": "__INGREDIENT__",
+      "name": "Enter an Ingredient",
+      "qualifiedId": "Use the qualified ID - (O)item or (BC)item"
+    },
+    {
       "id": 0,
       "name": "Weeds",
       "qualifiedId": "(O)0"

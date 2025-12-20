@@ -1,33 +1,85 @@
 import * as vscode from "vscode";
+import * as fs from "fs";
+import * as path from "path";
 import * as jsonc from "jsonc-parser";
 
 let cachedBundleThemes: string[] | null = null;
 let bundleThemesPromise: Promise<string[]> | null = null;
 
-export function invalidateBundleThemesCache(): void {
+function invalidateBundleThemesCache(): void {
   cachedBundleThemes = null;
   bundleThemesPromise = null;
 }
 
 /**
- * Scan workspace + optional ShopTypes.json to collect BundleThemes/ShopTypes.
+ * Resolve the expected ShopTypes.json path:
+ *   <modsRoot>\Unlockable Bundles\assets\Data\ShopTypes.json
  */
-export async function getBundleThemes(): Promise<string[]> {
-  if (cachedBundleThemes) return cachedBundleThemes;
-  if (bundleThemesPromise) return bundleThemesPromise;
+function resolveUbShopTypesPath(): string | null {
+  const config = vscode.workspace.getConfiguration("stardewModdingSchema");
+  const modsRootRaw = config.get<string>("modsRoot") ?? "";
+  const modsRoot = modsRootRaw.trim();
+
+  if (!modsRoot) {
+    return null;
+  }
+
+  return path.join(
+    modsRoot,
+    "Unlockable Bundles",
+    "assets",
+    "Data",
+    "ShopTypes.json"
+  );
+}
+
+/**
+ * Collect all known UB BundleThemes / ShopTypes from:
+ *  1) CP patches targeting UnlockableBundles/BundleThemes
+ *     (in content.json and nested data/Data JSON files)
+ *  2) *BundleThemes*.json files in the workspace
+ *  3) ShopTypes.json at <modsRoot>\Unlockable Bundles\assets\Data\ShopTypes.json
+ */
+async function getBundleThemes(): Promise<string[]> {
+  if (cachedBundleThemes) {
+    return cachedBundleThemes;
+  }
+  if (bundleThemesPromise) {
+    return bundleThemesPromise;
+  }
 
   bundleThemesPromise = (async () => {
     const themes = new Set<string>();
 
-    // 1) content.json EditData -> UnlockableBundles/BundleThemes
-    const contentFiles = await vscode.workspace.findFiles("**/content.json");
-    for (const file of contentFiles) {
+    // 1) CP patches (UnlockableBundles/BundleThemes via EditData)
+    //    in content.json/.jsonc and nested data/Data JSON files
+    const contentJson = await vscode.workspace.findFiles("**/content.json");
+    const contentJsonc = await vscode.workspace.findFiles("**/content.jsonc");
+    const dataJson = await vscode.workspace.findFiles(
+      "**/{data,Data}/**/*.json"
+    );
+    const dataJsonc = await vscode.workspace.findFiles(
+      "**/{data,Data}/**/*.jsonc"
+    );
+
+    const ubPatchFiles = [
+      ...contentJson,
+      ...contentJsonc,
+      ...dataJson,
+      ...dataJsonc,
+    ];
+
+    for (const file of ubPatchFiles) {
       try {
         const doc = await vscode.workspace.openTextDocument(file);
         const text = doc.getText();
+
         const errors: jsonc.ParseError[] = [];
-        const json = jsonc.parse(text, errors, { allowTrailingComma: true }) as any;
+        const json = jsonc.parse(text, errors, {
+          allowTrailingComma: true,
+        }) as any;
         if (!json || typeof json !== "object") continue;
+
         const changes = json.Changes;
         if (!Array.isArray(changes)) continue;
 
@@ -49,14 +101,19 @@ export async function getBundleThemes(): Promise<string[]> {
       }
     }
 
-    // 2) any *BundleThemes*.json
-    const bundleThemesFiles = await vscode.workspace.findFiles("**/*BundleThemes*.json");
+    // 2) Any *BundleThemes*.json in the workspace
+    const bundleThemesFiles = await vscode.workspace.findFiles(
+      "**/*BundleThemes*.json"
+    );
     for (const file of bundleThemesFiles) {
       try {
         const doc = await vscode.workspace.openTextDocument(file);
         const text = doc.getText();
+
         const errors: jsonc.ParseError[] = [];
-        const json = jsonc.parse(text, errors, { allowTrailingComma: true }) as any;
+        const json = jsonc.parse(text, errors, {
+          allowTrailingComma: true,
+        }) as any;
         if (!json || typeof json !== "object") continue;
 
         if (json.Entries && typeof json.Entries === "object") {
@@ -73,24 +130,22 @@ export async function getBundleThemes(): Promise<string[]> {
       }
     }
 
-    // 3) ShopTypes.json from configuration
-    const config = vscode.workspace.getConfiguration("stardewModdingSchema");
-    const shopTypesPath = config.get<string>("unlockableBundles.shopTypesPath")?.trim();
-
-    if (shopTypesPath) {
+    // 3) ShopTypes.json from modsRoot\Unlockable Bundles\assets\Data\ShopTypes.json
+    const shopTypesPath = resolveUbShopTypesPath();
+    if (shopTypesPath && fs.existsSync(shopTypesPath)) {
       try {
-        const uri = vscode.Uri.file(shopTypesPath);
-        const data = await vscode.workspace.fs.readFile(uri);
-        const text = Buffer.from(data).toString("utf8");
+        const data = fs.readFileSync(shopTypesPath, "utf8");
         const errors: jsonc.ParseError[] = [];
-        const json = jsonc.parse(text, errors, { allowTrailingComma: true }) as any;
+        const json = jsonc.parse(data, errors, {
+          allowTrailingComma: true,
+        }) as any;
         if (json && typeof json === "object") {
           for (const key of Object.keys(json)) {
             themes.add(key);
           }
         }
       } catch {
-        // ignore; diagnostics will warn user
+        // ignore; UB diagnostics will warn if needed
       }
     }
 
@@ -98,7 +153,7 @@ export async function getBundleThemes(): Promise<string[]> {
     bundleThemesPromise = null;
 
     console.log(
-      `[Stardew Modding Schema] Loaded ${cachedBundleThemes.length} bundle themes / shop types for completion.`
+      `[Stardew Modding Schema] Loaded ${cachedBundleThemes.length} bundle themes / ShopTypes for completion.`
     );
 
     return cachedBundleThemes;
@@ -107,25 +162,37 @@ export async function getBundleThemes(): Promise<string[]> {
   return bundleThemesPromise;
 }
 
-/**
- * Register ShopType completion provider + file watchers that invalidate the theme cache.
- */
-export function registerUbThemesSupport(context: vscode.ExtensionContext): void {
-  const builtInShopTypes = ["Dialogue", "SpeechBubble", "ParrotPerch", "CCBundle"];
+export function registerUbThemesSupport(
+  context: vscode.ExtensionContext
+): void {
+  const builtInShopTypes = [
+    "Dialogue",
+    "SpeechBubble",
+    "ParrotPerch",
+    "CCBundle",
+  ];
+
+  // Apply completion to CP content.json and any data/Data JSON (e.g. UB Bundles assets)
+  const selector: vscode.DocumentSelector = [
+    { pattern: "**/*.json" },
+    { pattern: "!**/manifest.json" },
+  ];
 
   const provider = vscode.languages.registerCompletionItemProvider(
-    [
-      { language: "json", pattern: "**/content.json" },
-      { language: "jsonc", pattern: "**/content.json" }
-    ],
+    selector,
     {
       async provideCompletionItems(document, position) {
         const line = document.lineAt(position.line).text;
 
-        if (!line.includes('"ShopType"')) return;
+        // Only handle lines with "ShopType"
+        if (!line.includes('"ShopType"')) {
+          return;
+        }
 
         const colonIndex = line.indexOf(":");
-        if (colonIndex === -1 || position.character <= colonIndex) return;
+        if (colonIndex === -1 || position.character <= colonIndex) {
+          return;
+        }
 
         let replaceRange: vscode.Range | undefined;
         let addComma = true;
@@ -145,7 +212,11 @@ export function registerUbThemesSupport(context: vscode.ExtensionContext): void 
           }
         }
 
-        const makeItem = (label: string, detail: string): vscode.CompletionItem => {
+        const items: vscode.CompletionItem[] = [];
+        const makeItem = (
+          label: string,
+          detail: string
+        ): vscode.CompletionItem => {
           const item = new vscode.CompletionItem(
             label,
             vscode.CompletionItemKind.EnumMember
@@ -163,38 +234,49 @@ export function registerUbThemesSupport(context: vscode.ExtensionContext): void 
           return item;
         };
 
-        const items: vscode.CompletionItem[] = [];
-
+        // Built-in ShopTypes
         for (const type of builtInShopTypes) {
           items.push(makeItem(type, "Unlockable Bundles ShopType (built-in)"));
         }
 
+        // Themes from content + BundleThemes + ShopTypes.json
         const themes = await getBundleThemes();
         for (const theme of themes) {
           if (builtInShopTypes.includes(theme)) continue;
+
           items.push(
-            makeItem(theme, "Unlockable Bundles ShopType (BundleTheme / ShopTypes.json)")
+            makeItem(
+              theme,
+              "Unlockable Bundles ShopType (BundleTheme / ShopTypes.json)"
+            )
           );
         }
 
         return items;
-      }
+      },
     },
     '"' // trigger on quote
   );
 
   context.subscriptions.push(provider);
 
-  // Watch content.json and *BundleThemes*.json to invalidate cache
-  const contentWatcher = vscode.workspace.createFileSystemWatcher("**/content.json");
-  contentWatcher.onDidChange(() => invalidateBundleThemesCache());
-  contentWatcher.onDidCreate(() => invalidateBundleThemesCache());
-  contentWatcher.onDidDelete(() => invalidateBundleThemesCache());
-  context.subscriptions.push(contentWatcher);
+  // Invalidate cache when modsRoot changes
+  context.subscriptions.push(
+    vscode.workspace.onDidChangeConfiguration((e) => {
+      if (e.affectsConfiguration("stardewModdingSchema.modsRoot")) {
+        invalidateBundleThemesCache();
+      }
+    })
+  );
 
-  const themesWatcher = vscode.workspace.createFileSystemWatcher("**/*BundleThemes*.json");
-  themesWatcher.onDidChange(() => invalidateBundleThemesCache());
-  themesWatcher.onDidCreate(() => invalidateBundleThemesCache());
-  themesWatcher.onDidDelete(() => invalidateBundleThemesCache());
-  context.subscriptions.push(themesWatcher);
+  // Invalidate cache when BundleThemes JSON files change
+  const bundleThemesFileWatcher = vscode.workspace.createFileSystemWatcher(
+    "**/*BundleThemes*.json"
+  );
+
+  bundleThemesFileWatcher.onDidChange(() => invalidateBundleThemesCache());
+  bundleThemesFileWatcher.onDidCreate(() => invalidateBundleThemesCache());
+  bundleThemesFileWatcher.onDidDelete(() => invalidateBundleThemesCache());
+
+  context.subscriptions.push(bundleThemesFileWatcher);
 }

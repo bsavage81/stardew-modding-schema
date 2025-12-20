@@ -23,35 +23,22 @@
 // - You only need to include categories you actually use. Others can be omitted entirely.
 
 {
-  // Optional: included only for clarity; the loader does not rely on these for custom IDs.
   "categoryTypes": {
     "objects": "O",
     "bigCraftables": "BC",
+    "boots": "B",
+    "flooring": "FL",
+    "furniture": "F",
+    "hats": "H",
+    "mannequins": "M",
+    "pants": "P",
+    "shirts": "S",
+    "tools": "T",
+    "trinkets": "TR",
+    "wallpapers": "WP",
     "weapons": "W"
   },
-
   "objects": [
-    // 1) New custom object
-    {
-      "id": 9000,
-      "name": "Mystic Turnip",
-      "qualifiedId": "(O)9000"
-    },
-
-    // 2) Override an existing vanilla qualifiedId with a better label for your workspace
-    //    (If stardew-ids.json already has "(O)2", this one will win at runtime.)
-    {
-      "id": 2,
-      "name": "Diamond Stone (Overridden Name)",
-      "qualifiedId": "(O)2"
-    }
-  ],
-
-  "weapons": [
-    {
-      "id": 9100,
-      "name": "Savage’s Debug Sword",
-      "qualifiedId": "(W)9100"
-    }
+    {}
   ]
 }
