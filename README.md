@@ -20,6 +20,8 @@ No configuration required.
 No extension settings needed.  
 Just open your mod and enjoy accurate IntelliSense.
 
+![CP Schema](https://raw.githubusercontent.com/bsavage81/stardew-modding-schema/master/assets/ContentPatcher.png)
+
 ---
 
 ### ✔ Item ID Hover & Autocompletion (IMPORTANT)
@@ -41,6 +43,8 @@ This triggers item ID completion suggestions, including:
 - `{{ModId}}` token-aware IDs  
 - Items with multiple variants (expanded automatically)
 
+![Ctrl + Space Item Completion](https://raw.githubusercontent.com/bsavage81/stardew-modding-schema/master/assets/Completions.png)
+
 Example item ID:
 
 ```json
@@ -59,6 +63,8 @@ Hovering over an item ID shows:
 - Source (vanilla or mod)  
 - Qualified ID type  
 - Context-aware info inside bundles, shops, recipes, and nested structures  
+
+![Item Hover Example](https://raw.githubusercontent.com/bsavage81/stardew-modding-schema/master/assets/Hover.png)
 
 Hovers work in keys, values, arrays, and deeply nested objects.
 
@@ -134,6 +140,8 @@ When editing Unlockable Bundles definitions, autocomplete includes:
 - All built-in UB ShopTypes  
 - All BundleThemes defined in your workspace  
 - All entries from external `ShopTypes.json`  
+
+![ShopType Autocomplete](https://raw.githubusercontent.com/bsavage81/stardew-modding-schema/master/assets/ShopType.png)
 
 Additional features:
 - Triggered instantly on `"` inside `ShopType` values  
