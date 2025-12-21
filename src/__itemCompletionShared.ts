@@ -110,20 +110,25 @@ function buildVariantsForSingleEntry(args: {
   document: vscode.TextDocument;
   valueNodeOffset: number;
   valueNodeLength: number;
+  noComma?: boolean;
 }): vscode.CompletionItem[] {
-  const { entry, replaceRange, document, valueNodeOffset, valueNodeLength } =
-    args;
+  const {
+    entry,
+    replaceRange,
+    document,
+    valueNodeOffset,
+    valueNodeLength,
+    noComma,
+  } = args;
 
   const results: vscode.CompletionItem[] = [];
 
   const prefixMatch = entry.qualifiedId.match(/^\(([A-Za-z]+)\)/);
   const categoryPrefix = prefixMatch ? prefixMatch[0] : "";
 
-  const commaEdits = buildCommaAfterStringEdits(
-    document,
-    valueNodeOffset,
-    valueNodeLength
-  );
+  const commaEdits = noComma
+    ? []
+    : buildCommaAfterStringEdits(document, valueNodeOffset, valueNodeLength);
 
   const stageCFilter = `${entry.qualifiedId} ${entry.id} ${entry.name} ${
     entry.modId ?? ""
@@ -294,6 +299,9 @@ export function buildItemIdCompletionsForToken(args: {
 
   // Suggest chaining command to run after inserting a prefix or a qualifiedId
   triggerSuggestCmd?: string;
+
+  // If true, do not apply comma insertion edits
+  noComma?: boolean;
 }): vscode.CompletionItem[] {
   const {
     lookups,
@@ -305,6 +313,7 @@ export function buildItemIdCompletionsForToken(args: {
     valueNodeLength,
     ingredientPlaceholder,
     triggerSuggestCmd,
+    noComma,
   } = args;
 
   const shouldStageA =
@@ -348,16 +357,15 @@ export function buildItemIdCompletionsForToken(args: {
       document,
       valueNodeOffset,
       valueNodeLength,
+      noComma,
     });
   }
 
   // Stage B
   const results: vscode.CompletionItem[] = [];
-  const commaEdits = buildCommaAfterStringEdits(
-    document,
-    valueNodeOffset,
-    valueNodeLength
-  );
+  const commaEdits = noComma
+    ? []
+    : buildCommaAfterStringEdits(document, valueNodeOffset, valueNodeLength);
 
   const catMatch = tokenTrimmed.match(/^\(([A-Z]+)\)/);
   const categoryFilter = catMatch ? catMatch[1] : null;

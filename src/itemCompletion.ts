@@ -7,14 +7,24 @@ import {
   buildItemIdCompletionsForToken,
 } from "./__itemCompletionShared";
 
-function findEnclosingProperty(node: JsonNode | undefined): JsonNode | undefined {
+function findEnclosingProperty(
+  node: JsonNode | undefined
+): JsonNode | undefined {
   let cur: JsonNode | undefined = node;
-  while (cur && cur.type !== "property") cur = cur.parent as JsonNode | undefined;
+  while (cur && cur.type !== "property")
+    cur = cur.parent as JsonNode | undefined;
   return cur;
 }
 
-function getPropertyKeyName(propNode: JsonNode | undefined): string | undefined {
-  if (!propNode || propNode.type !== "property" || !propNode.children || propNode.children.length < 2)
+function getPropertyKeyName(
+  propNode: JsonNode | undefined
+): string | undefined {
+  if (
+    !propNode ||
+    propNode.type !== "property" ||
+    !propNode.children ||
+    propNode.children.length < 2
+  )
     return;
   const keyNode = propNode.children[0];
   if (!keyNode || keyNode.type !== "string") return;
@@ -27,7 +37,10 @@ function getPropertyKeyName(propNode: JsonNode | undefined): string | undefined 
  *
  * Delimiters: whitespace, '/', ',', ';', '|'
  */
-function getTokenRangeInString(str: string, index: number): { start: number; end: number } {
+function getTokenRangeInString(
+  str: string,
+  index: number
+): { start: number; end: number } {
   if (index < 0) index = 0;
   if (index > str.length) index = str.length;
 
@@ -60,9 +73,15 @@ function getStringReplaceRangeForToken(
   const fullValue = (stringNode.value ?? "") as string;
 
   const stringStartOffset = stringNode.offset + 1;
-  const innerIndex = Math.max(0, Math.min(fullValue.length, offset - stringStartOffset));
+  const innerIndex = Math.max(
+    0,
+    Math.min(fullValue.length, offset - stringStartOffset)
+  );
 
-  const { start: tokenStart, end: tokenEnd } = getTokenRangeInString(fullValue, innerIndex);
+  const { start: tokenStart, end: tokenEnd } = getTokenRangeInString(
+    fullValue,
+    innerIndex
+  );
   const tokenText = fullValue.substring(tokenStart, tokenEnd);
   const tokenTrimmed = tokenText.trim();
 
@@ -82,7 +101,9 @@ function getStringReplaceRangeForToken(
  *  "Price": { "(O)388": 200, "Money": 2500 }
  *  "BundleReward": { "(H)40": 1 }
  */
-function getUbMapNameForProperty(propNode: JsonNode | undefined): string | undefined {
+function getUbMapNameForProperty(
+  propNode: JsonNode | undefined
+): string | undefined {
   // propNode is the leaf "(O)388": 200
   // parent chain: property -> object -> property ("Price") -> object/...
   if (!propNode || propNode.type !== "property") return;
@@ -179,10 +200,15 @@ export function registerItemCompletionSupport(
           const keyName = String(keyNode.value);
 
           // Keep existing behavior: only run for these ID-ish keys
-          const isIdKey = keyName === "ItemId" || keyName === "Name" || keyName === "Id";
+          const isIdKey =
+            keyName === "ItemId" || keyName === "Name" || keyName === "Id";
           if (!isIdKey) return;
 
-          const tokenInfo = getStringReplaceRangeForToken(document, valueNode, offset);
+          const tokenInfo = getStringReplaceRangeForToken(
+            document,
+            valueNode,
+            offset
+          );
           if (!tokenInfo) return;
 
           return buildItemIdCompletionsForToken({
@@ -194,6 +220,7 @@ export function registerItemCompletionSupport(
             valueNodeOffset: valueNode.offset,
             valueNodeLength: valueNode.length,
             triggerSuggestCmd,
+            noComma: false,
           });
         }
 
@@ -207,10 +234,16 @@ export function registerItemCompletionSupport(
 
         // Don’t offer item completions for non-item keys in these maps
         const thisKey = String(keyNode.value);
-        if (!thisKey) return;
+
+        // Allow blank keys so typing `"` immediately offers completions.
+        // Only skip Money when it is explicitly "Money".
         if (thisKey === "Money") return;
 
-        const keyTokenInfo = getStringReplaceRangeForToken(document, keyNode, offset);
+        const keyTokenInfo = getStringReplaceRangeForToken(
+          document,
+          keyNode,
+          offset
+        );
         if (!keyTokenInfo) return;
 
         return buildItemIdCompletionsForToken({
@@ -219,9 +252,10 @@ export function registerItemCompletionSupport(
           tokenTrimmed: keyTokenInfo.tokenTrimmed,
           replaceRange: keyTokenInfo.replaceRange,
           document,
-          valueNodeOffset: keyNode.offset, // we're replacing the KEY string node now
+          valueNodeOffset: keyNode.offset,
           valueNodeLength: keyNode.length,
           triggerSuggestCmd,
+          noComma: true,
         });
       },
     },
